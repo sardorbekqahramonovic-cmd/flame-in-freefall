@@ -32,12 +32,12 @@ python3 -m http.server 8080   # then open http://localhost:8080
 |---|---|
 | `ANTHROPIC_API_KEY` | Claude answers in Ask EMBER (used first when set). |
 | `OPENAI_API_KEY` | Voice: speech recognition (`gpt-4o-mini-transcribe`) and a natural voice (`gpt-4o-mini-tts`). Also answers questions with `gpt-4o-mini` when no Anthropic key is set. |
-| `OPENAI_MODEL`, `OPENAI_STT_MODEL`, `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | Optional overrides (defaults above, voice `coral`). OpenAI lists the current audio models as deprecated with shutdown in early 2027; set `OPENAI_STT_MODEL=gpt-transcribe` when switching. |
+| `OPENAI_MODEL`, `OPENAI_STT_MODEL`, `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | Optional overrides (defaults above, voice `cedar`). OpenAI lists the current audio models as deprecated with shutdown in early 2027; set `OPENAI_STT_MODEL=gpt-transcribe` when switching. |
 | `ALLOWED_ORIGINS` | Optional extra sites (comma-separated hosts) allowed to call the API. |
 
 Cost controls for a small prepaid balance: questions use a cheap model with a capped answer length, recordings are limited to about 15 seconds, spoken text to 500 characters, each IP to 20 requests a minute per instance, and other websites cannot call the API. Emergency commands and the “Hey EMBER” wake word cost nothing (they run in the browser). Rough cost with OpenAI: about $0.001 per typed question and under $0.01 per spoken question with a spoken answer.
 
-Without keys (for example on GitHub Pages) the app runs fully with the offline reasoner, and voice uses the browser's built-in speech (best in Chrome or Edge; spoken Uzbek needs the OpenAI voice because browsers rarely ship an Uzbek voice).
+Without keys (for example on GitHub Pages) the app runs fully with the offline reasoner, and voice uses the browser's built-in speech (best in Chrome or Edge). For Uzbek, a natural Uzbek voice installed in the browser (Microsoft Edge ships them) is used first, otherwise the OpenAI voice. Uzbek answers are rewritten for speech before they are read (numbers, units, Roman numerals and acronyms become Uzbek words), because voices otherwise read digits in English.
 
 **Tests:** `npm test` checks the serverless functions with a mocked API (provider choice, voice requests, cost caps, origin check, rate limit), and the flammability model calibration, the physical trends it must reproduce, ranking integrity, citations and retrieval, and that the Russian and Uzbek translations are complete and answer every suggested question.
 
