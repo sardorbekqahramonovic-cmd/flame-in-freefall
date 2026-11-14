@@ -1,63 +1,155 @@
-# Space Apps 2026 project submission text (English)
+# SARDOR: Space Apps 2026 project page text (English)
 
-Copy each section into the matching field of the Project Submission page. Replace the bracketed links before submitting.
+Paste each section into the field with the same name on the Project Submission page. Fields are in the order the form shows them. Before you press **Submit for Judging**:
+
+1. Open both links in a private browser window to confirm they open with no login.
+2. Check that the team name and member names on slide 1 of the deck are correct.
+3. Upload 2–3 screenshots from `docs/images/` (PNG, each under 10 MB) as the project images.
 
 ---
 
-## Project name
+## Project Name
 
-SARDOR: Safety Assistant for Risk and Data from Orbital Research (*sardor* is Uzbek for "leader" or "commander")
+SARDOR: Safety Assistant for Risk and Data from Orbital Research
 
-## High-level project summary
+## High-Level Project Summary
 
-SARDOR is an interactive, AI-powered fire-safety atlas that turns decades of NASA microgravity combustion experiments into ranked, explained insights for Moon and Mars missions. We curated 19 investigations, from Shuttle-era SSCE and SOFBALL to BASS, FLEX, ACME, SAME and the spacecraft-scale Saffire fires, into one searchable dataset with test conditions, diagnostics and findings. Users choose a mission (ISS, lunar habitat, pressurized rover, Mars habitat, spacesuit) and SARDOR ranks the evidence for that atmosphere and gravity, maps where data is missing, estimates material flammability with a transparent physics-informed model, and answers questions with cited sources. It matters because Artemis habitats will run at higher oxygen and lower pressure than any vehicle flown so far, and most flight fire data was taken in sea-level air.
+SARDOR is an AI-powered fire-safety assistant that turns decades of NASA microgravity combustion experiments into ranked, cited answers for Moon and Mars missions. We curated 19 NASA investigations, from Shuttle-era flame balls to the spacecraft-scale Saffire fires, into one searchable atlas. Users pick a mission (ISS, lunar habitat, rover, Mars habitat, spacesuit), and SARDOR then does four things:
 
-## Links
+- ranks the evidence for that atmosphere and gravity
+- maps where flight data is missing
+- estimates whether a material can burn, using a transparent physics-informed model
+- answers questions by text or voice in English, Russian or Uzbek, citing NASA sources and NASA technical reports it searches live
 
-- Live demo: [GitHub Pages or Vercel URL]
-- Code repository: https://github.com/sardorbekqahramonovic-cmd/flame-in-freefall
-- Demo video: [YouTube link, 30 seconds]
+This matters because Artemis habitats will run at higher oxygen and lower pressure than any vehicle flown so far. Most flight fire data was taken in sea-level air, and no combustion data yet exists at lunar or Martian gravity.
 
-## Project details
+## Link to Project Demo
 
-**What it does.** SARDOR has seven views. The Overview ranks ten fire-safety insights by mission impact, each with a recommended engineering action and citations. The Investigation Atlas summarizes every investigation's objectives, fuels and sample sizes, oxygen, pressure and flow ranges, diluents, sensors and findings, with search, filters and side-by-side comparison. The Flammability Map plots each investigation's tested oxygen–pressure envelope against real spacecraft atmospheres, showing that most data sits at 21% O2 and 1 atm while exploration atmospheres (30–34% O2 at 8.2–10.2 psia) are covered only by Saffire IV–VI and SoFIE. The Fire Risk Explorer estimates whether a material can sustain a flame for any oxygen level, pressure, gravity and ventilation, and shows the flight data behind the estimate. The Mission Ranker scores investigations with weights the team can adjust and explains each score. Ask SARDOR answers natural-language questions from the curated evidence with citations, confidence levels and research-gap warnings. Gaps & Earth lists the open questions, the planned investigations that will answer them (FM2, FLARE), and NASA fire-safety spinoffs. The whole interface and the curated content are available in English, Russian and Uzbek, and Ask SARDOR answers in the language the user picks, so engineers and students who do not read English can use the NASA record too. A voice assistant lets a user ask by speaking and hear the answer: voice mode gives a short answer with the key action first, a hands-free mode listens for "Hey SARDOR", and the commands "fire" and "smoke" return cited immediate actions instantly, even offline.
+https://flame-in-freefall-eight.vercel.app/docs/SARDOR-demo.pdf
 
-**How it works.** The app is a static web app (HTML, CSS, JavaScript, hand-built SVG charts), so it loads fast and runs offline. The "super intelligence" layer has three parts. (1) A retrieval engine indexes 139 evidence passages built from the curated data. (2) Claude (Anthropic), or a low-cost OpenAI model, answers questions only from the retrieved passages and must cite each claim; API keys stay in serverless functions. Voice uses OpenAI speech recognition and text-to-speech when a key is set, and the browser's Web Speech API otherwise. (3) An offline reasoner answers from the same evidence when no AI service is available, and calls the flammability model and the ranker when a question mentions a material, atmosphere or mission. The flammability model uses the U-shaped dependence of limiting oxygen on flow speed measured for solids in microgravity, buoyant flow scaling with gravity to the one-third power, and a mild pressure correction, calibrated so that at 1 g it equals each material's Limiting Oxygen Index. Automated tests check that it reproduces the flight trends: thin fuels go out in still microgravity air, burn with ventilation, and Nomex, safe in ISS air, becomes flammable at 34% O2 and 8.2 psia.
+(7-slide deck, English. The same file is in the repository: https://github.com/sardorbekqahramonovic-cmd/flame-in-freefall/blob/main/docs/SARDOR-demo.pdf)
 
-**Benefits and impact.** Researchers and students can find, compare and understand results in minutes instead of reading dozens of reports. Engineers get a mission-specific shortlist and concrete actions: correct 1-g material tests for microgravity, re-screen fabrics for exploration atmospheres, size inert-gas extinguishers from FLEX data, specify sub-micron smoke detection (SAME), and confirm extinguishment with gas sensors because cool flames burn invisibly (FLEX, CFI). Mission planners see exactly where evidence is thin, especially partial gravity, which PSI does not yet cover.
+## Link to Final Project
 
-**Creativity.** SARDOR treats the mission atmosphere as a first-class input. Changing the mission re-ranks the atlas, moves the target on the map, resets the risk model and changes the AI's context. The map makes the evidence gap visible at a glance, and every AI answer reports how well the flight data covers the question.
+https://flame-in-freefall-eight.vercel.app
 
-**Validity.** Every record links to its NASA source. Estimated values are marked. The model is transparent, documented, tested against known trends, and labelled as a screening tool rather than a certification method. Partial-gravity results are always flagged as extrapolations.
+(Source code: https://github.com/sardorbekqahramonovic-cmd/flame-in-freefall)
 
-**Tools.** HTML, CSS, JavaScript (no framework; built-in English, Russian and Uzbek interface), SVG, Web Speech API, Node.js serverless functions on Vercel, Anthropic Claude API, OpenAI API (gpt-4o-mini, gpt-4o-mini-transcribe, gpt-4o-mini-tts), GitHub Pages.
+## Detailed Project Description
 
-## NASA data
+**What it does.** SARDOR has seven views:
 
-- PSI Data Repository, Combustion Science: https://psi.nasa.gov/physci/repo/search?q=combustion
-- NASA Technical Reports Server (NTRS), public search API, queried live for every AI answer: https://ntrs.nasa.gov
-- NASA Glenn Combustion Science (investigation pages, SoFIE, FM2, FLARE): https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/
-- A Researcher's Guide to International Space Station Combustion Science: https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/
-- NASA investigation fact sheets: BASS, FLEX, Saffire, SAME, DAFT, SPICE, SLICE, ACME (nasa.gov)
-- NASA Safety & Mission Assurance: Apollo 1 and Apollo 13 lessons learned
-- NASA History: 25 Years Ago, Fire Aboard Space Station Mir
-- NASA Spinoff: Fireman's Air Tanks, Fire Detector, New Technology for the Fire Attire
-- NASA ScienceCasts: The Power of Studying Combustion on the ISS
+- **Overview** ranks ten fire-safety insights by mission impact. Each insight has a recommended engineering action and its citations.
+- **Investigation Atlas** summarizes every investigation: objectives, fuels and sample sizes, oxygen, pressure and flow ranges, diluents, sensors and findings. It has search, filters and side-by-side comparison.
+- **Flammability Map** plots each investigation's tested oxygen–pressure range against real spacecraft atmospheres. It shows that most data sits at 21% O₂ and 1 atm. Exploration atmospheres (30–34% O₂ at 8.2–10.2 psia) are covered only by Saffire IV–VI and SoFIE.
+- **Fire Risk Explorer** estimates whether a material can sustain a flame at any oxygen level, pressure, gravity and ventilation speed, and shows the flight data behind the estimate.
+- **Mission Ranker** scores investigations with weights the team can adjust and explains each score.
+- **Ask SARDOR** answers plain-language questions with citations, a confidence level and research-gap warnings.
+- **Gaps & Earth** lists the open questions, the planned investigations that will answer them (FM2, FLARE), and NASA fire-safety spinoffs.
 
-## Space agency partner data
+**Languages and voice.** The interface, the curated content and the answers are available in English, Russian and Uzbek. Engineers and students who do not read English can use the NASA record too.
 
-Partner contributions are referenced through NASA sources: JAXA's FLEX-2J droplet-array experiment, Italy's CNR Istituto Motori FLEX-ICE-GA, and the JAXA-led FLARE collaboration with ESA, CNES and DLR.
+A voice assistant lets users ask by speaking and hear the answer. Voice answers are short and give the key action first. A hands-free mode listens for "Hey SARDOR". The commands "fire" and "smoke" return cited immediate actions instantly, even offline. These are labelled as training guidance, not official procedure.
 
-## References
+**How it works.** SARDOR is a static web app (HTML, CSS, JavaScript and hand-built SVG charts). It loads fast and runs offline. The intelligence layer has four parts:
 
-- Meyer et al. (2018), Evaluation of spacecraft smoke detector performance in the low-gravity environment, Fire Safety Journal, doi:10.1016/j.firesaf.2018.04.004
-- Limiting Oxygen Index values: typical ASTM D2863 literature values for each material.
-- Fonts: Archivo, IBM Plex Sans, IBM Plex Mono (Google Fonts, SIL Open Font License).
-- Anthropic Claude API and the @anthropic-ai/sdk package (MIT).
-- OpenAI API: gpt-4o-mini (questions and NTRS search keywords), gpt-4.1 (Uzbek answers), gpt-4o-mini-transcribe (speech recognition), gpt-4o-mini-tts (speech).
-- Web Speech API (browser speech recognition and synthesis).
-- All other code is original work by the team.
+1. **Curated record.** A retrieval engine indexes 139 evidence passages built from the curated NASA data.
+2. **Live NASA reports.** For each question, an AI model writes two English keyword searches, and SARDOR queries the NASA Technical Reports Server (NTRS) public API. The matching report abstracts are added as extra evidence, cited by their NTRS record number. NTRS holds 1,077 records on microgravity combustion, 871 on spacecraft fire and 682 on flammability.
+3. **Answer model.** Claude (Anthropic) or an OpenAI model answers from these passages only, and must cite each claim. When the NASA evidence does not cover a question, SARDOR says what data is missing. Any background it adds is labelled "general knowledge, not NASA data". API keys stay in serverless functions, with rate limits and cost caps.
+4. **Offline reasoner.** When no AI service is available, an offline reasoner answers from the same evidence.
 
-## Use of artificial intelligence
+Whenever a question mentions a material, atmosphere or mission, SARDOR also runs the flammability model and the ranker. The flammability model rests on three pieces of physics:
 
-We used Anthropic's Claude as a coding and research assistant to help curate the dataset from the NASA sources above, write code and draft documentation. The team reviewed the content and is responsible for it. In the running app, Claude or an OpenAI model answers user questions from the curated NASA evidence and from NASA technical report abstracts found live in NTRS, and cites its sources; anything not supported by those sources is marked "general knowledge, not NASA data", and OpenAI models turn speech into text and read answers aloud. The emergency command checklists were written by the team from the cited NASA evidence and are labelled as training guidance, not official NASA procedure. No AI-generated images, video or audio are presented as NASA material, and no NASA logos are used.
+- the U-shaped dependence of limiting oxygen on flow speed, measured for solids in microgravity
+- buoyant flow that scales with gravity to the one-third power
+- a mild pressure correction
+
+It is calibrated so that at 1 g and 1 atm it equals each material's Limiting Oxygen Index. Automated tests check that it reproduces the flight results:
+
+- thin fuels go out in still microgravity air
+- they burn again when ventilation is added
+- some materials burn at lower oxygen in slow microgravity flow than in normal gravity
+- Nomex, safe in ISS air, becomes flammable at 34% O₂ and 8.2 psia
+
+**Benefits.**
+
+- **Researchers and students** can find, compare and understand results in minutes instead of reading dozens of reports.
+- **Engineers** get a mission-specific shortlist and concrete actions:
+  - correct 1 g material tests for microgravity
+  - re-screen fabrics for exploration atmospheres
+  - size inert-gas extinguishers from FLEX data
+  - specify sub-micron smoke detection (SAME)
+  - confirm extinguishment with gas sensors, because cool flames burn invisibly (FLEX, CFI)
+- **Mission planners** see exactly where evidence is thin, especially at partial gravity.
+
+On Earth, the same questions apply to oxygen-enriched rooms, submarines and aircraft cargo bays.
+
+**Goals.**
+
+- Make NASA's combustion record usable by people who are not combustion specialists, in their own language.
+- Be honest about uncertainty. Every record links to its NASA source, and estimated values are marked. Partial-gravity results are always flagged as extrapolations.
+- The model is a screening and teaching tool, not a certification method (NASA-STD-6001 remains the standard).
+
+Next, we want to add the FM2 and FLARE results as they are published, native Uzbek neural voices, and more material data.
+
+**Tools.**
+
+- HTML, CSS and JavaScript, with no framework and no build step
+- SVG charts and the Web Speech API
+- Node.js serverless functions on Vercel
+- the NASA NTRS public API
+- the Anthropic Claude API
+- the OpenAI API: gpt-4o-mini for answers and search keywords, gpt-4.1 for Uzbek answers, gpt-4o-mini-transcribe for speech recognition and gpt-4o-mini-tts for speech
+- GitHub for code hosting
+
+## NASA Data
+
+We curated 19 combustion investigations, 10 insights, 12 historic events and 139 evidence passages from the NASA sources below. Each record in the app links back to its source.
+
+- **PSI Data Repository, Combustion Science.** The primary source for investigation conditions, fuels, diagnostics and findings: https://psi.nasa.gov/physci/repo/search?q=combustion
+- **NASA Technical Reports Server (NTRS).** Its public search API is queried live for every AI answer, and the abstracts it returns are cited by record number: https://ntrs.nasa.gov
+- **NASA Glenn Combustion Science.** Investigation pages, including SoFIE, FM2 and FLARE: https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/
+- **A Researcher's Guide to International Space Station Combustion Science:** https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/
+- **NASA investigation fact sheets:** BASS, FLEX, Saffire, SAME, DAFT, SPICE, SLICE and ACME (nasa.gov)
+- **NASA Safety & Mission Assurance:** Apollo 1 and Apollo 13 lessons learned
+- **NASA History:** "25 Years Ago: Fire Aboard Space Station Mir"
+- **NASA Spinoff:** "Fireman's Air Tanks", "Fire Detector" and "New Technology for the Fire Attire"
+- **NASA ScienceCasts:** "The Power of Studying Combustion on the ISS"
+
+How we used them:
+
+- The investigation records drive the atlas, the oxygen–pressure map and the mission ranker.
+- Flight results (BASS, SSCE, Saffire IV–VI) calibrate and test the flammability model.
+- PSI's lack of partial-gravity data defines the research gaps that the app flags.
+- NTRS abstracts widen the evidence for questions the curated record does not cover.
+
+## Space Agency Partner & Other Data
+
+**Space agency partner data.** These contributions are referenced through NASA sources:
+
+- JAXA: the FLEX-2J droplet-array experiment
+- Italy's CNR Istituto Motori: FLEX-ICE-GA
+- the JAXA-led FLARE collaboration with ESA, CNES and DLR
+
+**Other data, references and tools:**
+
+- Meyer et al. (2018), "Evaluation of spacecraft smoke detector performance in the low-gravity environment", *Fire Safety Journal*, doi:10.1016/j.firesaf.2018.04.004
+- Limiting Oxygen Index values: typical ASTM D2863 literature values for each material
+- Fonts: Archivo, IBM Plex Sans and IBM Plex Mono (Google Fonts, SIL Open Font License)
+- Anthropic Claude API and the @anthropic-ai/sdk package (MIT license)
+- OpenAI API (models listed under Tools)
+- Web Speech API (built into the browser)
+- Vercel (hosting) and GitHub (code)
+
+All other code, text and images are original work by the team. The images in the deck are screenshots of the app. No copyrighted images are used.
+
+## Use of Artificial Intelligence
+
+Yes, we used AI, in four ways:
+
+1. **Building the project (code, data, text).** We used Anthropic's Claude as a coding and research assistant. It helped us curate the dataset from the NASA sources above, write code, and draft documentation and this text. The team reviewed everything and is responsible for it. This is disclosed in the README ("Use of AI"), in the site footer, and in an `ai-disclosure` meta tag in `index.html`. Commits made with AI help carry a `Co-Authored-By: Claude` trailer.
+2. **Answers in the running app.** Claude or an OpenAI model (gpt-4o-mini; gpt-4.1 for Uzbek) answers user questions. It uses only the curated NASA evidence and NASA report abstracts found live in NTRS, and it cites its sources. Anything not supported by those sources is labelled "general knowledge, not NASA data". The "fire" and "smoke" checklists were written by the team from the cited NASA evidence, not generated by AI.
+3. **AI-generated audio.** Spoken answers use AI-generated speech from OpenAI gpt-4o-mini-tts, or the browser's own voice. The interface says so next to the voice controls. Every audio response from our server carries an `x-ai-generated` metadata header naming the model. Speech recognition uses OpenAI gpt-4o-mini-transcribe or the browser.
+4. **Demo deck.** The slides were laid out with AI help, and their footer says so. Every image in the deck is a screenshot of the app.
+
+We used no AI-generated images or video. No NASA logos, flags, mission identifiers or other branding appear in the app, the deck or any generated content.

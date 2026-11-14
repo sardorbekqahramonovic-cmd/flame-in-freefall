@@ -636,6 +636,7 @@
             <p class="wake-diag" id="v-diag" aria-live="polite" hidden></p>
             <div class="quick"><span class="eyebrow">${t("v.quick")}</span><button class="chip danger" type="button" data-cmd="v.fire">🔥 ${t("v.fire")}</button><button class="chip danger" type="button" data-cmd="v.smoke">💨 ${t("v.smoke")}</button><button class="chip" type="button" id="v-stop" hidden>■ ${t("v.stop")}</button></div>
             <p class="hint">${t("v.cmdHint")}</p>
+            <p class="hint">${t("v.aiVoice")}</p>
           </div>
           <div class="panel"><h3>${t("ask.try")}</h3><div class="suggest" style="margin-top:10px">${E.suggestions().map((q) => `<button type="button">${esc(q)}</button>`).join("")}</div></div>
           <div class="panel"><h3>${t("ask.how")}</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">

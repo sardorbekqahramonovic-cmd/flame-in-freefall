@@ -81,6 +81,8 @@ export default async function handler(req, res) {
       const audio = Buffer.from(await r.arrayBuffer());
       res.setHeader("content-type", "audio/mpeg");
       res.setHeader("cache-control", "no-store");
+      // Space Apps rule: AI-generated audio must say so in its metadata too.
+      res.setHeader("x-ai-generated", `true; synthetic speech by OpenAI ${TTS_MODEL}`);
       return res.status(200).send(audio);
     }
 

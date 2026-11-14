@@ -71,9 +71,16 @@ voice.js                 speech in/out: OpenAI via api/voice, or the browser's W
 api/ask.js               serverless Q&A endpoint: Claude, or OpenAI as a low-cost option
 api/voice.js             serverless speech-to-text and text-to-speech (OpenAI)
 data/                    curated investigations, atmospheres, materials, insights, RU / UZ translations
-docs/                    submission text and demo video script
+docs/                    submission text, demo deck (SARDOR-demo.pdf) and demo video script
 tests/                   model checks
 ```
+
+## Use of AI
+
+- **Code and data:** written by the team with help from Anthropic's Claude as a coding and research assistant, and reviewed by the team. Commits made with that help carry a `Co-Authored-By: Claude` trailer, and `index.html` has an `ai-disclosure` meta tag.
+- **Answers:** Ask SARDOR answers are generated at runtime by Claude or an OpenAI model from cited NASA passages. Anything not backed by those passages is labelled "general knowledge, not NASA data".
+- **Audio:** spoken answers use AI-generated speech (OpenAI text-to-speech) or the browser's own voice. The interface says so next to the voice controls, and `api/voice.js` returns an `x-ai-generated` header with each audio clip.
+- **Deck:** the demo slides were laid out with AI help; their images are screenshots of the app. No AI-generated images or video are used, and no NASA logos or branding appear anywhere.
 
 ## License
 
