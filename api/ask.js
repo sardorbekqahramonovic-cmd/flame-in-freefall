@@ -5,7 +5,7 @@
 //   neither -> GET reports ok:false and the browser uses its offline reasoner.
 // GET returns status; POST answers a question from the evidence passages the browser retrieved.
 import Anthropic from "@anthropic-ai/sdk";
-import { LANGS, pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON } from "./_shared.js";
+import { LANGS, pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openaiError } from "./_shared.js";
 
 const CLAUDE_MODEL = "claude-opus-5-5";
 const OPENAI_MODEL = () => process.env.OPENAI_MODEL || "gpt-4o-mini";
@@ -73,6 +73,7 @@ async function askOpenAI(system, messages, voice) {
   if (!r.ok) {
     const e = new Error(`OpenAI ${r.status}`);
     e.status = r.status;
+    e.info = await openaiError(r);
     throw e;
   }
   const j = await r.json();
@@ -121,8 +122,9 @@ export default async function handler(req, res) {
     if (out.refused) return res.status(200).json({ answer: REFUSAL[lang], model: out.model });
     return res.status(200).json({ answer: out.answer, model: out.model, provider: prov });
   } catch (err) {
-    if (err instanceof Anthropic.RateLimitError || err.status === 429) return res.status(429).json({ error: "Rate limited or out of credit, try again later" });
-    if (err instanceof Anthropic.APIError || err.status) return res.status(502).json({ error: `AI service error ${err.status ?? ""}`.trim() });
+    const info = err.info || {};
+    if (err instanceof Anthropic.RateLimitError || err.status === 429) return res.status(429).json({ error: "Rate limited or out of credit, try again later", ...info });
+    if (err instanceof Anthropic.APIError || err.status) return res.status(502).json({ error: `AI service error ${err.status ?? ""}`.trim(), ...info });
     return res.status(500).json({ error: "Unexpected server error" });
   }
 }

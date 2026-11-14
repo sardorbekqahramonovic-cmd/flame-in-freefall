@@ -3,7 +3,7 @@
 //   POST { action:"stt", audio, mime, lang } -> { text }   (audio = base64, max ~20 s)
 //   POST { action:"tts", text, lang }        -> audio/mpeg (text capped at 500 characters)
 // Needs OPENAI_API_KEY. Without it the browser falls back to the Web Speech API.
-import { pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON } from "./_shared.js";
+import { pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openaiError } from "./_shared.js";
 
 const STT_MODEL = () => process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe";
 const TTS_MODEL = () => process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         headers: { authorization: `Bearer ${OPENAI_KEY()}` },
         body: form,
       });
-      if (!r.ok) return res.status(r.status === 429 ? 429 : 502).json({ error: `Transcription failed (${r.status})` });
+      if (!r.ok) return res.status(r.status === 429 ? 429 : 502).json({ error: `Transcription failed (${r.status})`, ...(await openaiError(r)) });
       const j = await r.json();
       return res.status(200).json({ text: clean(j.text, 1500).trim() });
     }
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
         instructions: VOICE_STYLE[lang],
         response_format: "mp3",
       });
-      if (!r.ok) return res.status(r.status === 429 ? 429 : 502).json({ error: `Speech failed (${r.status})` });
+      if (!r.ok) return res.status(r.status === 429 ? 429 : 502).json({ error: `Speech failed (${r.status})`, ...(await openaiError(r)) });
       const audio = Buffer.from(await r.arrayBuffer());
       res.setHeader("content-type", "audio/mpeg");
       res.setHeader("cache-control", "no-store");

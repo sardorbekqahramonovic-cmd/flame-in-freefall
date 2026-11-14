@@ -50,6 +50,20 @@ export function guard(req, res, { perMinute = 20 } = {}) {
 
 export const OPENAI_KEY = () => process.env.OPENAI_API_KEY;
 
+// OpenAI's error code and message say why a key fails (no access to a model, region,
+// out of credit). Key fragments and account ids are removed before they leave the server.
+export async function openaiError(r) {
+  let code = "", message = "";
+  try {
+    const j = await r.json();
+    code = (j && j.error && (j.error.code || j.error.type)) || "";
+    message = (j && j.error && j.error.message) || "";
+  } catch (e) { /* not JSON */ }
+  message = String(message).replace(/sk-[\w*-]+/g, "sk-...").replace(/\b(proj|org)[_-][\w-]+/g, "$1_...").slice(0, 200);
+  console.error(`OpenAI ${r.status}${code ? " " + code : ""}: ${message}`);
+  return { code: String(code).slice(0, 60), detail: message };
+}
+
 export async function openaiJSON(path, body) {
   const r = await fetch(`https://api.openai.com/v1/${path}`, {
     method: "POST",
