@@ -259,6 +259,7 @@
     "v.wakeOn": ["Listening for “Hey EMBER”…", "Жду фразу «Эй, EMBER»…", "“Hey EMBER” so'zini kutyapman…"],
     "v.wakeHeard": ["Yes? Ask your question.", "Да? Задайте вопрос.", "Ha? Savolingizni bering."],
     "v.wakeUnsupported": ["Hands-free mode needs Chrome or Edge.", "Режим «без рук» работает в Chrome или Edge.", "Qo'lsiz rejim Chrome yoki Edge'da ishlaydi."],
+    "v.wakeMiss": ["Heard “{s}”. Start with “Hey EMBER” to ask.", "Услышано: «{s}». Чтобы спросить, начните с «Эй, Эмбер».", "Eshitildi: “{s}”. Savol berish uchun “Hey EMBER” deb boshlang."],
     "v.engOpenAI": ["Voice: OpenAI speech recognition and natural voice", "Голос: распознавание речи и естественный голос OpenAI", "Ovoz: OpenAI nutqni aniqlash va tabiiy ovoz"],
     "v.engBrowser": ["Voice: built-in browser speech (best in Chrome or Edge)", "Голос: встроенная речь браузера (лучше всего в Chrome или Edge)", "Ovoz: brauzerning o'z nutq tizimi (Chrome yoki Edge'da yaxshi ishlaydi)"],
     "v.engNone": ["This browser has no speech recognition. Typing still works; use Chrome or Edge for voice.", "В этом браузере нет распознавания речи. Ввод текстом работает; для голоса используйте Chrome или Edge.", "Bu brauzerda nutqni aniqlash yo'q. Yozib so'rash ishlaydi; ovoz uchun Chrome yoki Edge'dan foydalaning."],

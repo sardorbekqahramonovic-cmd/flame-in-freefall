@@ -9,6 +9,9 @@ import { LANGS, pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openai
 
 const CLAUDE_MODEL = "claude-opus-5-5";
 const OPENAI_MODEL = () => process.env.OPENAI_MODEL || "gpt-4o-mini";
+// gpt-4o-mini writes weak Uzbek (misspellings such as "lakin", invented words), so Uzbek uses a
+// stronger model: about 1 US cent per answer instead of 0.1 cent.
+const OPENAI_MODEL_FOR = (lang) => (lang === "uz" ? process.env.OPENAI_MODEL_UZ || "gpt-4.1" : OPENAI_MODEL());
 let claude = null; // created on first use, only when a key exists
 
 const SYSTEM = `You are EMBER, a fire-safety analyst for human space exploration.
@@ -19,7 +22,17 @@ Rules:
 - Cite every factual claim with the passage id in square brackets, e.g. [BASS] or [FLEX#1]. Never invent ids.
 - Passage MODEL is EMBER's screening model output. Present it as an estimate, not as measured data.
 - PSI holds no partial-gravity (Moon or Mars) combustion data. When the question involves the Moon or Mars, say that results are extrapolated from microgravity and 1 g data.
-- Rocket and propellant fires are out of scope.`;
+- Rocket and propellant fires are out of scope.
+- The mission context line is the cabin atmosphere the user picked in the app, not the natural atmosphere of the Moon or Mars. Say "in a cabin at ..." when you use it. Mars air is thin carbon dioxide and cannot sustain a fire; fires happen inside pressurised habitats, rovers and suits.`;
+
+// Model-specific spelling slips seen in Uzbek output, fixed after the answer arrives.
+const UZ_FIXES = [[/(^|[^\p{L}])([Ll])akin(?![\p{L}])/gu, (m, a, l) => a + (l === "L" ? "Lekin" : "lekin")]];
+const fixUzbek = (text) => UZ_FIXES.reduce((t, [rx, to]) => t.replace(rx, to), text);
+
+const UZBEK_STYLE = `
+- Write correct standard literary Uzbek in Latin script, the way an Uzbek science journalist writes. Write oʻ and gʻ as o' and g'.
+- Spelling to follow: lekin (never "lakin"), biroq, ammo, chunki, shuning uchun, shuningdek, kislorod, bosim, yonish, alanga, tutun, o't o'chirgich, mikrogravitatsiya, Oy, Mars, kema, ekipaj.
+- Short, simple sentences. Never invent words; if you do not know the Uzbek term, use the English term.`;
 
 const STYLE_TEXT = `
 - Structure: a one-sentence direct answer first, then 2-5 short bullet points starting with "- ", then one line starting with "**Recommended action:**" when an action follows from the evidence.
@@ -39,7 +52,7 @@ const REFUSAL = {
 
 function systemFor(lang, voice) {
   return `${SYSTEM}${voice ? STYLE_VOICE : STYLE_TEXT}
-- Write the whole answer in ${LANGS[lang].name}${voice ? "" : ', including the "**Recommended action:**" label'}. Keep investigation names, passage ids in brackets and numbers unchanged.`;
+- Write the whole answer in ${LANGS[lang].name}${voice ? "" : ', including the "**Recommended action:**" label'}. Keep investigation names, passage ids in brackets and numbers unchanged.${lang === "uz" ? UZBEK_STYLE : ""}`;
 }
 
 function provider() {
@@ -64,10 +77,11 @@ async function askClaude(system, messages, voice) {
   return { answer, model: response.model };
 }
 
-async function askOpenAI(system, messages, voice) {
+async function askOpenAI(system, messages, voice, lang) {
+  const uz = lang === "uz"; // Uzbek needs more tokens per word
   const r = await openaiJSON("chat/completions", {
-    model: OPENAI_MODEL(),
-    max_completion_tokens: voice ? 220 : 600, // small caps keep the prepaid balance going
+    model: OPENAI_MODEL_FOR(lang),
+    max_completion_tokens: voice ? (uz ? 320 : 220) : uz ? 900 : 600, // small caps keep the prepaid balance going
     messages: [{ role: "system", content: system }, ...messages],
   });
   if (!r.ok) {
@@ -118,9 +132,10 @@ export default async function handler(req, res) {
 
   const system = systemFor(lang, voice);
   try {
-    const out = prov === "anthropic" ? await askClaude(system, messages, voice) : await askOpenAI(system, messages, voice);
+    const out = prov === "anthropic" ? await askClaude(system, messages, voice) : await askOpenAI(system, messages, voice, lang);
     if (out.refused) return res.status(200).json({ answer: REFUSAL[lang], model: out.model });
-    return res.status(200).json({ answer: out.answer, model: out.model, provider: prov });
+    const answer = lang === "uz" ? fixUzbek(out.answer) : out.answer;
+    return res.status(200).json({ answer, model: out.model, provider: prov });
   } catch (err) {
     const info = err.info || {};
     if (err instanceof Anthropic.RateLimitError || err.status === 429) return res.status(429).json({ error: "Rate limited or out of credit, try again later", ...info });

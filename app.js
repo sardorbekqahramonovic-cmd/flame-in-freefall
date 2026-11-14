@@ -625,7 +625,7 @@
             <h3>${t("v.title")}</h3>
             <p class="engine" id="v-eng" style="margin:6px 0 10px;line-height:1.4">${t("ask.checking")}</p>
             <label class="toggle"><input type="checkbox" id="v-read" ${state.voiceMode ? "checked" : ""}><span>${t("v.readAloud")}</span></label>
-            <label class="toggle"><input type="checkbox" id="v-wake"><span>${t("v.wake")}</span></label>
+            <label class="toggle"><input type="checkbox" id="v-wake" ${state.wake ? "checked" : ""}><span>${t("v.wake")}</span></label>
             <div class="quick"><span class="eyebrow">${t("v.quick")}</span><button class="chip danger" type="button" data-cmd="v.fire">🔥 ${t("v.fire")}</button><button class="chip danger" type="button" data-cmd="v.smoke">💨 ${t("v.smoke")}</button><button class="chip" type="button" id="v-stop" hidden>■ ${t("v.stop")}</button></div>
             <p class="hint">${t("v.cmdHint")}</p>
           </div>
@@ -722,6 +722,9 @@
         if (location.hash !== "#ask") location.hash = "ask";
         if (rest && rest.length > 2) voiceQuestion(rest);
         else { beep(); setLive("heard"); voiceQuestion(); }
+      }, (said) => {
+        // show what was heard, so a missed wake word is visible instead of silent
+        if (state.wake && !E.voice.isListening() && !E.voice.isSpeaking()) liveNote(t("v.wakeMiss", { s: said.slice(0, 60) }));
       });
       if (!ok) { e.target.checked = false; state.wake = false; liveNote(t("v.wakeUnsupported")); return; }
       setLive("wake");

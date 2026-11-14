@@ -259,44 +259,73 @@
     return { spoken: true };
   }
 
-  /* ---------- "Hey EMBER" wake word (browser recogniser, free) ---------- */
-  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|ok|okay|эй|хэй|хей|привет|salom)[\s,]*)?(?:ember|emb[aeə]r|эмбер|эмбэр|амбер|эмбр)(?!\p{L})[\s,.!?]*/iu;
-  let wake = null; // { rec, onWake, paused, on }
+  /* ---------- "Hey EMBER" wake word (browser recogniser, free) ----------
+   * Recognisers spell the name many ways ("Amber", "Xey Ember", "Emberga", "эмбер"), so the pattern is loose.
+   * Every alternative the recogniser offers is checked. A watchdog restarts listening if Chrome drops it. */
+  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:ember|embər|emb[aeiəы]r|amber|ambar|imber|embr|эмбер|эмбэр|эмбар|амбер|эмбр)(?:ga|jon|га)?(?!\p{L})[\s,.!?]*/iu;
+  let wake = null; // { rec, live, paused, on, timer, begin, drop }
 
-  function startWake(lang, onWake) {
+  function startWake(lang, onWake, onHeard) {
     if (!Rec) return false;
     stopWake();
-    const w = { on: true, paused: false, onWake, lang };
+    const w = { on: true, paused: false, rec: null, live: false, started: 0, lang };
+    const drop = (r) => {
+      if (w.rec === r) { w.rec = null; w.live = false; }
+      try { r.abort(); } catch (err) { /* already ended */ }
+    };
     const begin = () => {
-      if (!w.on || w.paused) return;
+      if (!w.on || w.paused || w.rec) return;
       const r = new Rec();
       r.lang = BCP[lang] || "en-US";
       r.continuous = true;
       r.interimResults = false;
+      r.maxAlternatives = 3;
+      r.onstart = () => { if (w.rec === r) w.live = true; };
       r.onresult = (e) => {
-        const res = e.results[e.results.length - 1];
-        if (!res.isFinal) return;
-        const said = res[0].transcript.trim();
-        const m = WAKE_RX.exec(said);
-        if (!m) return;
-        const rest = said.slice(m.index + m[0].length).trim();
-        w.paused = true;
-        try { r.stop(); } catch (err) { /* already stopped */ }
-        onWake(rest);
+        if (w.rec !== r || w.paused) return;
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const res = e.results[i];
+          if (!res.isFinal) continue;
+          let said = res[0].transcript.trim(), m = null;
+          for (let k = 0; k < res.length && !m; k++) {
+            const alt = res[k].transcript.trim(), hit = WAKE_RX.exec(alt);
+            if (hit) { said = alt; m = hit; }
+          }
+          if (!m) { if (said && onHeard) onHeard(said); continue; }
+          w.paused = true;
+          drop(r);
+          onWake(said.slice(m.index + m[0].length).trim());
+          return;
+        }
       };
       r.onerror = (e) => { if (e.error === "not-allowed" || e.error === "service-not-allowed") { w.on = false; w.denied = true; } };
-      r.onend = () => { w.rec = null; if (w.on && !w.paused) setTimeout(begin, 250); }; // Chrome stops after a while
-      w.rec = r;
-      try { r.start(); } catch (err) { /* start called twice */ }
+      r.onend = () => {
+        if (w.rec !== r) return; // an old session we already replaced
+        w.rec = null; w.live = false;
+        if (w.on && !w.paused) setTimeout(begin, 250); // Chrome ends sessions after a while
+      };
+      w.rec = r; w.started = Date.now();
+      try { r.start(); } catch (err) { w.rec = null; setTimeout(begin, 1000); } // busy microphone: try again
     };
-    w.begin = begin;
+    // watchdog: a session that never started, or listening that silently stopped, is restarted
+    w.timer = setInterval(() => {
+      if (!w.on || w.paused) return;
+      if (w.rec && !w.live && Date.now() - w.started > 5000) drop(w.rec);
+      if (!w.rec) begin();
+    }, 3000);
+    w.begin = begin; w.drop = drop;
     wake = w;
     begin();
     return true;
   }
-  function pauseWake() { if (wake) { wake.paused = true; if (wake.rec) try { wake.rec.stop(); } catch (e) { /* ignore */ } } }
-  function resumeWake() { if (wake && wake.on) { wake.paused = false; if (!wake.rec) wake.begin(); } }
-  function stopWake() { if (wake) { wake.on = false; if (wake.rec) try { wake.rec.abort(); } catch (e) { /* ignore */ } wake = null; } }
+  function pauseWake() { if (wake) { wake.paused = true; if (wake.rec) wake.drop(wake.rec); } }
+  function resumeWake() {
+    if (!wake || !wake.on) return;
+    wake.paused = false;
+    const w = wake;
+    setTimeout(() => w.begin(), 300); // let the microphone and speaker settle first
+  }
+  function stopWake() { if (wake) { wake.on = false; clearInterval(wake.timer); if (wake.rec) wake.drop(wake.rec); wake = null; } }
   const wakeDenied = () => !!(wake && wake.denied);
 
   E.voice = {
