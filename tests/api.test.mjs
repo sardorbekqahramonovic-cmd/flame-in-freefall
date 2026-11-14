@@ -91,7 +91,7 @@ assert.equal(res.code, 502); assert.equal(res.body.code, "model_not_found"); ass
 {
   const corpus = (await import("../api/corpus.js")).default;
   res = fakeRes(); await corpus(req("GET"), res);
-  assert.equal(res.body.ntrs["microgravity combustion"], 56); assert.match(res.headers["cache-control"], /s-maxage/);
+  assert.equal(res.body.ntrs["microgravity combustion"], 56); assert.match(res.headers["cache-control"], /s-maxage=86400/);
 }
 
 // other sites cannot spend the balance

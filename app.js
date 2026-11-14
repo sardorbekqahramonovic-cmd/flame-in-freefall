@@ -770,9 +770,10 @@
       } catch (e) { corpus = {}; }
     }
     const nf = (n) => Number(n || 0).toLocaleString(E.lang === "en" ? "en-US" : E.lang === "ru" ? "ru-RU" : "uz-Latn-UZ");
-    el.innerHTML = base + " " + (corpus["microgravity combustion"]
-      ? t("kb.ntrs", { mc: nf(corpus["microgravity combustion"]), sf: nf(corpus["spacecraft fire"]), fl: nf(corpus["flammability"]), fs: nf(corpus["fire suppression"]), sd: nf(corpus["smoke detection"]) })
-      : t("kb.ntrsLive"));
+    const c = (k) => corpus[k] > 0;
+    const v = { mc: nf(corpus["microgravity combustion"]), sf: nf(corpus["spacecraft fire"]), fl: nf(corpus["flammability"]), fs: nf(corpus["fire suppression"]), sd: nf(corpus["smoke detection"]) };
+    const all = ["microgravity combustion", "spacecraft fire", "flammability", "fire suppression", "smoke detection"].every(c);
+    el.innerHTML = base + " " + (all ? t("kb.ntrs", v) : c("microgravity combustion") && c("spacecraft fire") && c("flammability") ? t("kb.ntrs3", v) : t("kb.ntrsLive"));
   }
 
   /* ---------------- gaps & earth ---------------- */

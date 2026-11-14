@@ -20,11 +20,11 @@ async function query(q, size, timeoutMs) {
       signal: ctrl.signal,
       headers: { accept: "application/json" },
     });
-    if (!r.ok) return { q, total: 0, results: [] };
+    if (!r.ok) return { q, total: 0, results: [], failed: true };
     const j = await r.json();
     return { q, total: (j.stats && j.stats.total) || 0, results: Array.isArray(j.results) ? j.results : [] };
   } catch (e) {
-    return { q, total: 0, results: [] };
+    return { q, total: 0, results: [], failed: true };
   } finally {
     clearTimeout(timer);
   }
@@ -36,6 +36,7 @@ export async function searchNTRS(queries, { size = 6, timeoutMs = 4000 } = {}) {
   const list = [...new Set((queries || []).map((q) => clean(q, 80).trim()).filter(Boolean))].slice(0, 3);
   if (!list.length) return { docs: [], total: 0, queries: [] };
   const outs = await Promise.all(list.map((q) => query(q, Math.min(size + 4, 12), timeoutMs)));
+  for (let i = 0; i < outs.length; i++) if (outs[i].failed) outs[i] = await query(list[i], Math.min(size + 4, 12), timeoutMs); // one retry
   const seen = new Map();
   for (const o of outs) {
     for (const x of o.results) {
@@ -56,9 +57,15 @@ export async function searchNTRS(queries, { size = 6, timeoutMs = 4000 } = {}) {
 
 /* How many NTRS records exist for the challenge's core topics (shown in the interface). */
 export const CORPUS_TOPICS = ["microgravity combustion", "spacecraft fire", "flammability", "fire suppression", "smoke detection"];
+// One topic at a time (NTRS drops some parallel requests); a failed count is left out, not shown as 0.
 export async function corpusStats() {
-  const outs = await Promise.all(CORPUS_TOPICS.map((q) => query(q, 1, 5000)));
-  return Object.fromEntries(outs.map((o) => [o.q, o.total]));
+  const counts = {};
+  for (const q of CORPUS_TOPICS) {
+    let o = await query(q, 1, 5000);
+    if (o.failed) o = await query(q, 1, 5000);
+    if (!o.failed) counts[q] = o.total;
+  }
+  return counts;
 }
 
 // Stop words for building a query without a language model (English only).
