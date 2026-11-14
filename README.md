@@ -6,6 +6,17 @@
 
 VULKAN turns decades of NASA microgravity combustion experiments into ranked, explained fire-safety insights for Moon and Mars missions. Pick a mission (ISS, lunar habitat, pressurized rover, Mars habitat, Mars transit, spacesuit) and every view re-ranks and re-interprets the evidence for that atmosphere and gravity level.
 
+## Team Rescuers
+
+| Member | Role |
+|---|---|
+| Xurramov Shoxjaxon Zokirovich | Team mentor |
+| Tursunov Sardorbek Qahramon o‘g‘li | Frontend developer |
+| Roziqov Shohijahon Rashid o‘g‘li | Backend developer |
+| Boboqulov Ozodbek Rustam o‘g‘li | Pitch presenter |
+| Xamidov Boburjon Murodjon o‘g‘li | UI/UX designer |
+| Ismatov Behruz Fahriddin o‘g‘li | AI / ML engineer |
+
 ## What it does
 
 | View | What you get |
@@ -80,7 +91,10 @@ tests/                   model checks
 - **Code and data:** written by the team with help from Anthropic's Claude as a coding and research assistant, and reviewed by the team. Commits made with that help carry a `Co-Authored-By: Claude` trailer, and `index.html` has an `ai-disclosure` meta tag.
 - **Answers:** Ask VULKAN answers are generated at runtime by Claude or an OpenAI model from cited NASA passages. Anything not backed by those passages is labelled "general knowledge, not NASA data".
 - **Audio:** spoken answers use AI-generated speech (OpenAI text-to-speech) or the browser's own voice. The interface says so next to the voice controls, and `api/voice.js` returns an `x-ai-generated` header with each audio clip.
-- **Deck:** the demo slides were laid out with AI help; their images are screenshots of the app. No AI-generated images or video are used, and no NASA logos or branding appear anywhere.
+- **Deck:** the demo slides were laid out with AI help; their images are screenshots of the app.
+- **Demo video:** the narration is AI-generated speech (OpenAI gpt-4o-mini-tts, made through VULKAN's own voice endpoint). The video was edited with AI help from screen captures of the app. This is stated in the video description and in the MP4 metadata.
+
+No AI-generated images or video are used, and no NASA logos or branding appear anywhere.
 
 ## License
 
