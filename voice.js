@@ -261,8 +261,9 @@
 
   /* ---------- "Hey EMBER" wake word (browser recogniser, free) ----------
    * Recognisers spell the name many ways ("Amber", "Xey Ember", "Emberga", "эмбер"), so the pattern is loose.
+   * The Uzbek recogniser hears "Ember" as "em bir" and writes "M1" (bir = one).
    * Every alternative the recogniser offers is checked. A watchdog restarts listening if Chrome drops it. */
-  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:ember|embər|emb[aeiəы]r|amber|ambar|imber|embr|эмбер|эмбэр|эмбар|амбер|эмбр)(?:ga|jon|га)?(?!\p{L})[\s,.!?]*/iu;
+  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:ember|embər|emb[aeiəы]r|amber|ambar|imber|embr|em\s?bir|m\s?[-‑]?\s?(?:1|bir)|эмбер|эмбэр|эмбар|амбер|эмбр|эм\s?1)(?:ga|jon|га)?(?![\p{L}\d])[\s,.!?]*/iu;
   let wake = null; // { rec, live, paused, on, timer, begin, drop }
 
   function startWake(lang, onWake, onHeard) {
