@@ -208,7 +208,6 @@
           <div class="hero-actions">
             <a class="btn primary" href="#risk">${t("ov.btnRisk", { s: esc(s.label) })}</a>
             <a class="btn" href="#ask">${t("ov.btnAsk")}</a>
-            <a class="btn" href="#map">${t("ov.btnMap")}</a>
           </div>
         </div>
         <div class="flame-compare">
@@ -216,6 +215,12 @@
           <div class="flame-card"><canvas id="flame-ug" aria-label="${esc(t("ov.flame2Aria"))}"></canvas><div class="cap">${t("ov.flame2")}</div></div>
         </div>
       </div>
+      <section class="steps" aria-labelledby="steps-h">
+        <h2 class="sr-only" id="steps-h">${t("ov.stepsTitle")}</h2>
+        <button type="button" class="step" data-step="mission"><span class="step-n">1</span><span><b>${t("ov.s1t")}</b><span>${t("ov.s1d")}</span></span></button>
+        <a class="step" href="#risk"><span class="step-n">2</span><span><b>${t("ov.s2t")}</b><span>${t("ov.s2d")}</span></span></a>
+        <a class="step" href="#ask"><span class="step-n">3</span><span><b>${t("ov.s3t")}</b><span>${t("ov.s3d")}</span></span></a>
+      </section>
       <div class="grid g4">
         <div class="panel kpi"><span class="v num">${E.INVESTIGATIONS.length}</span><span class="l">${t("ov.kpi1", { f: flown.length, p: E.INVESTIGATIONS.length - flown.length })}</span></div>
         <div class="panel kpi"><span class="v num">${yrs[0]}–${yrs[1]}</span><span class="l">${t("ov.kpi2")}</span></div>
@@ -243,6 +248,8 @@
           </div>
         </div>
       </div>`;
+    const stepM = $("#view-overview [data-step=mission]");
+    if (stepM) stepM.addEventListener("click", () => { window.scrollTo({ top: 0, behavior: "smooth" }); const sel = $("#scenario"); sel.focus(); if (sel.showPicker) { try { sel.showPicker(); } catch (e) { /* not allowed without a gesture */ } } });
     drawFlame($("#flame-1g"), false);
     drawFlame($("#flame-ug"), true);
   }
@@ -619,7 +626,7 @@
     if (v.dataset.init) { updateEngine(); return; }
     v.dataset.init = "1";
     v.innerHTML = `
-      <div class="view-head"><div><h2>${t("ask.title")}</h2><p>${t("ask.desc")}</p></div><span class="engine" id="engine">${t("ask.checking")}</span></div>
+      <div class="view-head"><div><h2>${t("ask.title")}</h2><p>${t("ask.desc")}</p></div><span class="engine engine-pill" id="engine">${t("ask.checking")}</span></div>
       <p class="kb-line" id="kb-line">${t("kb.base", { inv: E.INVESTIGATIONS.length, ins: E.INSIGHTS.length })}</p>
       <div class="split">
         <div class="panel chat">
@@ -769,7 +776,7 @@
   async function updateEngine() {
     const on = await E.ai.checkOnline();
     const el = $("#engine");
-    if (el) el.innerHTML = on ? t("ask.online", { p: E.ai.providerName(on.provider), m: esc(on.model) }) : t("ask.offline");
+    if (el) { el.innerHTML = on ? t("ask.online", { p: E.ai.providerName(on.provider), m: esc(on.model) }) : t("ask.offline"); el.classList.toggle("on", !!on); el.classList.toggle("off", !on); }
     updateKb(on);
   }
   // Knowledge-base size: curated record plus the NASA reports that live search reaches.
