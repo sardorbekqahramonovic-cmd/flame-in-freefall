@@ -76,4 +76,22 @@ for (const lang of ["ru", "uz"]) {
 }
 E.setLang("en");
 assert.equal(M.assess({ o2: 21, p: 101.3, g: 0, vent: 10, materialId: "nomex" }).state, "Self-extinguishing");
+
+// ---- voice: emergency commands, stop words and short spoken answers in every language ----
+for (const [lang, fire, smoke, stop] of [["en", "Fire!", "smoke", "stop"], ["ru", "Пожар!", "дым", "стоп"], ["uz", "Yong'in!", "tutun", "to'xta"]]) {
+  E.setLang(lang);
+  assert.equal(E.ai.emergency(fire).emergency, "fire", `${lang} fire`);
+  assert.equal(E.ai.emergency(smoke).emergency, "smoke", `${lang} smoke`);
+  assert.equal(E.ai.emergency(E.t("v.fire")).emergency, "fire", `${lang} fire chip`);
+  assert.ok(E.ai.isStop(stop), `${lang} stop`);
+  const em = await E.ai.ask(fire, E.SCENARIOS[0]);
+  assert.ok(em.spoken.length > 20 && !/\[/.test(em.spoken), `${lang} emergency spoken text`);
+  // a question about fire is a question, not a command
+  assert.equal(E.ai.emergency(E.suggestions()[2]), null, `${lang} long question is not a command`);
+  for (const sug of E.suggestions()) {
+    const r = await E.ai.ask(sug, E.SCENARIOS[1]);
+    assert.ok(r.spoken && r.spoken.length > 15 && r.spoken.length <= 420 && !/\[|\*\*/.test(r.spoken), `${lang} spoken summary for "${sug}": ${r.spoken}`);
+  }
+}
+E.setLang("en");
 console.log("All EMBER model and language checks passed.");

@@ -14,6 +14,7 @@ EMBER turns decades of NASA microgravity combustion experiments into ranked, exp
 | **Fire Risk Explorer** | A transparent, physics-informed screening model: choose material, O₂, pressure, gravity and ventilation, and see whether a flame can spread, the margin to the limit, a limiting-O₂-vs-flow curve with Moon / Mars / Earth markers, and which flight data supports the estimate. |
 | **Mission Ranker** | Scores every investigation for the mission with adjustable weights (atmosphere match, hazard relevance, fire scale, data richness, recency) and explains each score. |
 | **Ask EMBER** | Natural-language Q&A. BM25 retrieval over 139 evidence passages, then Claude answers only from those passages with citations. Offline, a local reasoner answers from the same evidence, runs the model and the ranker, and flags research gaps. |
+| **Voice assistant** | A microphone button in Ask EMBER: speak a question, get the answer on screen and read aloud. Voice mode gives a short answer with the key action first. Hands-free mode listens for “Hey EMBER”. Saying or typing “fire” or “smoke” returns cited immediate actions instantly, with no AI call; “stop” silences the voice. Works in English, Russian and Uzbek. |
 | **EN / RU / UZ** | The whole interface and the curated content (investigations, insights, gaps, history, atmospheres, materials) are available in English, Russian and Uzbek. The switch is in the top bar and is remembered per browser. Ask EMBER retrieves evidence in the chosen language, parses questions written in any of the three, and Claude answers in that language. |
 | **Gaps & Earth** | Ranked research gaps (partial gravity, exploration atmospheres, detection of cool flames…) linked to planned investigations, NASA spinoffs, and the full reference list. |
 
@@ -25,9 +26,20 @@ It is a static site with no build step.
 python3 -m http.server 8080   # then open http://localhost:8080
 ```
 
-**Deploy with AI (Vercel):** import the repo in Vercel, add the environment variable `ANTHROPIC_API_KEY`, deploy. `api/ask.js` becomes a serverless function and the Ask EMBER panel switches to Claude automatically. Without a key (for example on GitHub Pages) the app runs fully with the offline reasoner.
+**Deploy with AI and voice (Vercel):** import the repo in Vercel, add one or both keys as environment variables, deploy. `api/ask.js` and `api/voice.js` become serverless functions and keys never reach the browser.
 
-**Tests:** `npm test` checks the flammability model calibration, the physical trends it must reproduce, ranking integrity, citations and retrieval, and that the Russian and Uzbek translations are complete and answer every suggested question.
+| Variable | What it enables |
+|---|---|
+| `ANTHROPIC_API_KEY` | Claude answers in Ask EMBER (used first when set). |
+| `OPENAI_API_KEY` | Voice: speech recognition (`gpt-4o-mini-transcribe`) and a natural voice (`gpt-4o-mini-tts`). Also answers questions with `gpt-4o-mini` when no Anthropic key is set. |
+| `OPENAI_MODEL`, `OPENAI_STT_MODEL`, `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | Optional overrides (defaults above, voice `coral`). OpenAI lists the current audio models as deprecated with shutdown in early 2027; set `OPENAI_STT_MODEL=gpt-transcribe` when switching. |
+| `ALLOWED_ORIGINS` | Optional extra sites (comma-separated hosts) allowed to call the API. |
+
+Cost controls for a small prepaid balance: questions use a cheap model with a capped answer length, recordings are limited to about 15 seconds, spoken text to 500 characters, each IP to 20 requests a minute per instance, and other websites cannot call the API. Emergency commands and the “Hey EMBER” wake word cost nothing (they run in the browser). Rough cost with OpenAI: about $0.001 per typed question and under $0.01 per spoken question with a spoken answer.
+
+Without keys (for example on GitHub Pages) the app runs fully with the offline reasoner, and voice uses the browser's built-in speech (best in Chrome or Edge; spoken Uzbek needs the OpenAI voice because browsers rarely ship an Uzbek voice).
+
+**Tests:** `npm test` checks the serverless functions with a mocked API (provider choice, voice requests, cost caps, origin check, rate limit), and the flammability model calibration, the physical trends it must reproduce, ranking integrity, citations and retrieval, and that the Russian and Uzbek translations are complete and answer every suggested question.
 
 ## The flammability model (Fire Risk Explorer)
 
@@ -51,8 +63,10 @@ index.html, styles.css   UI shell and design tokens (light and dark)
 app.js                   views, charts (hand-built SVG), drawer, chat UI
 i18n.js                  interface strings in EN / RU / UZ and the language switch
 model.js                 flammability model, mission ranker, BM25 retrieval
-ai.js                    Claude client + offline reasoner
-api/ask.js               serverless Claude endpoint (key stays server-side)
+ai.js                    AI client (Claude or OpenAI) + offline reasoner + emergency commands
+voice.js                 speech in/out: OpenAI via api/voice, or the browser's Web Speech API; wake word
+api/ask.js               serverless Q&A endpoint: Claude, or OpenAI as a low-cost option
+api/voice.js             serverless speech-to-text and text-to-speech (OpenAI)
 data/                    curated investigations, atmospheres, materials, insights, RU / UZ translations
 docs/                    submission text and demo video script
 tests/                   model checks

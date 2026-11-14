@@ -54,7 +54,7 @@
       const r = await fetch(API, { method: "GET", signal: ctrl.signal });
       clearTimeout(t);
       const j = r.ok ? await r.json() : null;
-      online = j && j.ok ? { model: j.model } : false;
+      online = j && j.ok ? { model: j.model, provider: j.provider || "anthropic" } : false;
     } catch (e) {
       online = false;
     }
@@ -150,6 +150,41 @@
     return n / Math.max(1, Math.min(A.size, B.size));
   }
 
+  /* ---------- emergency quick commands ("fire", "smoke") ----------
+   * Answered locally and instantly, with no AI call, so they work offline and cost nothing. */
+  const EM_RX = {
+    fire: /\b(fire|flames?|burning)\b|пожар|огонь|горит|yong'in|olov|yonyapti/,
+    smoke: /\bsmoke\b|дым|tutun/,
+  };
+  function emergency(q) {
+    const s = norm(q).replace(/[!?.,]/g, " ").trim();
+    if (!s || s.split(/\s+/).length > 4) return null; // only short commands, not questions about fire
+    const kind = EM_RX.smoke.test(s) ? "smoke" : EM_RX.fire.test(s) ? "fire" : null;
+    if (!kind) return null;
+    const n = kind === "fire" ? 6 : 5;
+    const lines = [t(`em.${kind}Title`)];
+    for (let i = 1; i <= n; i++) lines.push(`- ${i}. ${t(`em.${kind}${i}`)}`);
+    lines.push(t("em.note"));
+    const cites = kind === "fire" ? ["SSCE", "ACME", "BASS", "FLEX", "CFI"] : ["SSCE", "SAME", "SAFFIRE-IV-VI"];
+    return { text: lines.join("\n"), spoken: t(`em.${kind}Say`), cites, confidence: "", gaps: [], engine: "offline", emergency: kind };
+  }
+  const STOP_RX = /^(stop|be quiet|silence|стоп|хватит|тихо|замолчи|to'xta|bas|jim)(?![\p{L}'])/u;
+  const isStop = (q) => STOP_RX.test(norm(q).replace(/[!?.,]/g, " ").trim());
+
+  // text for speaking: no citations, markdown or list markers
+  function speakable(text) {
+    return String(text || "")
+      .replace(/\[[^\]]+\]/g, "")
+      .replace(/\*\*/g, "")
+      .replace(/^\s*-\s*(\d+\.\s*)?/gm, "")
+      .replace(/[≈~]/g, "")
+      .replace(/\s+([.,;:])/g, "$1")
+      .replace(/\n+/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+  const firstSentence = (x) => firstSentences(speakable(x), 1);
+
   /* ---------- offline reasoner ---------- */
   function offlineAnswer(q, scenario) {
     const idx = getIndex();
@@ -159,6 +194,7 @@
     const s = norm(q);
     const lines = [];
     const cites = new Set();
+    const spoken = []; // short voice version: key action or verdict first
     const n1 = (v) => E.num(v, 1);
 
     const wantsCompare = invs.length >= 2 && RX.compare.test(s);
@@ -172,6 +208,7 @@
       });
       const shared = invs.every((i) => i.platform.includes("CIR")) ? t("ai.shareCIR") : invs.every((i) => i.platform.includes("MSG")) ? t("ai.shareMSG") : t("ai.shareNone");
       lines.push(shared);
+      invs.slice(0, 2).forEach((i) => spoken.push(`${i.name}: ${firstSentence(i.findings[0])}`));
     } else if (wantsRank) {
       const r = E.model.rank(scenario);
       lines.push(t("ai.rankHead", { s: scenario.label, o2: fmt(scenario.o2), p: fmt(scenario.p), g: fmt(scenario.g) }));
@@ -180,6 +217,7 @@
         cites.add(x.inv.id);
       });
       lines.push(t("ai.rankFoot"));
+      spoken.push(t("sp.top", { s: scenario.label, list: r.slice(0, 3).map((x) => x.inv.name).join(", ") }));
     }
 
     if (cond) {
@@ -188,6 +226,7 @@
       lines.push("- " + t("ai.model1", { loc: n1(a.loc), loc1: n1(a.loc1g), m: (a.margin >= 0 ? "+" : "") + n1(a.margin), st: a.state }));
       lines.push("- " + t("ai.model2", { u: n1(a.uEff), v: fmt(cond.vent), b: n1(a.ub), lv: t("lv." + a.coverage.level), note: a.coverage.note }));
       a.coverage.near.slice(0, 2).forEach((n) => cites.add(n.inv.id));
+      spoken.unshift(t("sp.model", { m: a.material.label, st: a.state, loc: n1(a.loc), o2: fmt(cond.o2) }));
     }
 
     if (!wantsCompare && !wantsRank) {
@@ -208,16 +247,20 @@
       }
       const tag = RX.suppress.test(s) ? "suppression" : RX.detect.test(s) ? "detection" : null;
       const ins = (tag && E.INSIGHTS.find((x) => x.tags.includes(tag) && (x.cites.some((c) => cites.has(c)) || hits.some((h) => h.c.id === `INSIGHT-${x.rank}`)))) || (tag && E.INSIGHTS.find((x) => x.tags.includes(tag))) || E.INSIGHTS.find((x) => hits.some((h) => h.c.id === `INSIGHT-${x.rank}`));
-      if (ins) lines.push(t("ai.action", { a: ins.action }));
+      // voice: key action first; for a material question the yes/no verdict comes first, then the action
+      if (ins) { lines.push(t("ai.action", { a: ins.action })); spoken.splice(cond ? 1 : 0, 0, t("sp.action", { a: ins.action })); }
+      const firstEvidence = lines.find((l) => l.startsWith("- "));
+      if (firstEvidence && spoken.length < 2) spoken.push(firstSentence(firstEvidence));
+      if (!spoken.length && lines.length) spoken.push(firstSentence(lines[lines.length - 1]));
     }
 
     const top = hits[0] ? hits[0].s : 0;
     const confidence = cond ? (E.model.assess(cond).coverage.level === "High" ? "Medium" : "Low (extrapolated)") : top > 7 && hits.length >= 4 ? "High" : top > 3.5 ? "Medium" : "Low";
-    return { text: lines.join("\n"), cites: [...cites], confidence, gaps: gapFlags(q, cond), engine: "offline" };
+    return { text: lines.join("\n"), spoken: speakable(spoken.join(" ")).slice(0, 420), cites: [...cites], confidence, gaps: gapFlags(q, cond), engine: "offline" };
   }
 
   /* ---------- online (Claude) ---------- */
-  async function onlineAnswer(q, scenario, history) {
+  async function onlineAnswer(q, scenario, history, mode) {
     const idx = getIndex();
     const cond = parseConditions(q, scenario);
     const hits = topical(q, idx.search(q, 16), cond).slice(0, 10);
@@ -235,19 +278,22 @@
         contexts: contexts.slice(0, 12),
         history: history.slice(-6),
         lang: E.lang || "en",
+        mode: mode === "voice" ? "voice" : "text",
       }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const j = await r.json();
     if (!j.answer) throw new Error(j.error || "Empty answer");
     const cites = [...new Set((j.answer.match(/\[([A-Za-z0-9\-#:]+)\]/g) || []).map((m) => m.slice(1, -1).split(/[#:]/)[0]))].filter((id) => E.INVESTIGATIONS.some((i) => i.id === id));
-    return { text: j.answer, cites, confidence: j.confidence || (hits[0] && hits[0].s > 5 ? "High" : "Medium"), gaps: gapFlags(q, cond), engine: j.model || "claude" };
+    return { text: j.answer, spoken: speakable(j.answer).slice(0, 500), cites, confidence: j.confidence || (hits[0] && hits[0].s > 5 ? "High" : "Medium"), gaps: gapFlags(q, cond), engine: j.model || "ai", provider: j.provider || (online && online.provider) };
   }
 
-  async function ask(q, scenario, history = []) {
+  async function ask(q, scenario, history = [], opts = {}) {
+    const em = emergency(q);
+    if (em) return em;
     const on = await checkOnline();
     if (on) {
-      try { return await onlineAnswer(q, scenario, history); }
+      try { return await onlineAnswer(q, scenario, history, opts.mode); }
       catch (e) { const res = offlineAnswer(q, scenario); res.notice = t("ask.unreachable", { e: e.message }); return res; }
     }
     return offlineAnswer(q, scenario);
@@ -273,5 +319,6 @@
     return { text: lines.join("\n"), cites: [inv.id], confidence: d === 0 ? "High" : d < 0.6 ? "Medium" : "Low", gaps: [], engine: "offline" };
   }
 
-  E.ai = { ask, interpret, checkOnline, getIndex, parseConditions };
+  const providerName = (p) => ((p || (online && online.provider)) === "openai" ? "OpenAI" : "Claude");
+  E.ai = { ask, interpret, checkOnline, getIndex, parseConditions, emergency, isStop, speakable, providerName };
 })();

@@ -28,6 +28,8 @@
     weights: store.get("weights", { ...M.DEFAULT_WEIGHTS }),
     chat: [],
     mapCats: Object.keys(E.CATEGORIES),
+    voiceMode: store.get("voiceMode", false), // read answers aloud, short answers
+    wake: false, // "Hey EMBER" hands-free listening (needs a click to start, never persisted)
   };
   const scenario = () => E.SCENARIOS.find((s) => s.id === state.scenario) || E.SCENARIOS[0];
 
@@ -90,6 +92,7 @@
     E.setLang(lang);
     // views that keep their own DOM are rebuilt; the chat restarts in the new language
     state.chat = [];
+    if (E.voice) { E.voice.stopWake(); E.voice.stopSpeaking(); state.wake = false; }
     ["#view-atlas", "#view-ask"].forEach((sel) => delete $(sel).dataset.init);
     $("#drawer-root").innerHTML = "";
     fillScenarios();
@@ -377,7 +380,7 @@
       <div><h3 style="margin-bottom:8px">${t("dr.implications")}</h3><div class="implic">${["prevention", "detection", "suppression"].map((k) => `<div><h4 style="color:${k === "prevention" ? "var(--flame)" : k === "detection" ? "var(--ok)" : "var(--ember)"}">${t("layer." + k)}</h4>${esc(i.implications[k] || t("dr.notFocus"))}</div>`).join("")}</div></div>
       <div class="ai-box"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><strong>${t("dr.meansFor", { s: esc(s.label) })}</strong><span class="pill flame">${t("dr.relevance")} ${r.score.toFixed(0)}/100</span></div><div id="interp" class="muted">${t("dr.generating")}</div></div>
       <div><h3>${t("dr.sources")}</h3><ul class="findings" style="margin-top:8px">${i.links.map((l) => `<li><a href="${l.url}" target="_blank" rel="noopener">${esc(l.label)}</a></li>`).join("")}</ul></div>`);
-    E.ai.interpret(i, s).then((res) => { const el = $("#interp"); if (el) { el.classList.remove("muted"); el.innerHTML = renderAnswer(res.text) + `<div class="engine" style="margin-top:6px">${res.engine === "offline" ? t("eng.offline") : t("eng.claude")} · ${t("eng.confidence")}: ${esc(lv(res.confidence))}</div>`; } });
+    E.ai.interpret(i, s).then((res) => { const el = $("#interp"); if (el) { el.classList.remove("muted"); el.innerHTML = renderAnswer(res.text) + `<div class="engine" style="margin-top:6px">${res.engine === "offline" ? t("eng.offline") : E.ai.providerName(res.provider)} · ${t("eng.confidence")}: ${esc(lv(res.confidence))}</div>`; } });
   }
 
   /* ---------------- SVG helpers ---------------- */
@@ -614,9 +617,18 @@
       <div class="split">
         <div class="panel chat">
           <div class="chat-log" id="chat-log" aria-live="polite"></div>
-          <form class="chat-form" id="chat-form"><textarea id="chat-in" rows="1" placeholder="${esc(t("ask.placeholder"))}" aria-label="${esc(t("ask.aria"))}"></textarea><button class="btn primary" type="submit">${t("ask.send")}</button></form>
+          <div class="voice-live" id="v-live" aria-live="polite" hidden></div>
+          <form class="chat-form" id="chat-form"><textarea id="chat-in" rows="1" placeholder="${esc(t("ask.placeholder"))}" aria-label="${esc(t("ask.aria"))}"></textarea><button class="icon-btn mic" id="mic" type="button" aria-label="${esc(t("v.mic"))}" title="${esc(t("v.mic"))}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button class="btn primary" type="submit">${t("ask.send")}</button></form>
         </div>
         <div class="grid" style="align-content:start">
+          <div class="panel voice-panel">
+            <h3>${t("v.title")}</h3>
+            <p class="engine" id="v-eng" style="margin:6px 0 10px;line-height:1.4">${t("ask.checking")}</p>
+            <label class="toggle"><input type="checkbox" id="v-read" ${state.voiceMode ? "checked" : ""}><span>${t("v.readAloud")}</span></label>
+            <label class="toggle"><input type="checkbox" id="v-wake"><span>${t("v.wake")}</span></label>
+            <div class="quick"><span class="eyebrow">${t("v.quick")}</span><button class="chip danger" type="button" data-cmd="v.fire">🔥 ${t("v.fire")}</button><button class="chip danger" type="button" data-cmd="v.smoke">💨 ${t("v.smoke")}</button><button class="chip" type="button" id="v-stop" hidden>■ ${t("v.stop")}</button></div>
+            <p class="hint">${t("v.cmdHint")}</p>
+          </div>
           <div class="panel"><h3>${t("ask.try")}</h3><div class="suggest" style="margin-top:10px">${E.suggestions().map((q) => `<button type="button">${esc(q)}</button>`).join("")}</div></div>
           <div class="panel"><h3>${t("ask.how")}</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">
             <li>${t("ask.how1", { n: E.ai.getIndex() && E.model.buildChunks().length })}</li>
@@ -628,7 +640,7 @@
     const log = $("#chat-log");
     pushBot({ text: t("ask.hello", { n: E.INVESTIGATIONS.length, s: scenario().label }), cites: [], confidence: "", gaps: [], engine: "" });
     $$(".suggest button", v).forEach((b) => b.addEventListener("click", () => send(b.textContent)));
-    $("#chat-form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("#chat-in").value.trim(); if (t) send(t); });
+    $("#chat-form").addEventListener("submit", (e) => { e.preventDefault(); const q = $("#chat-in").value.trim(); if (q) send(q); });
     $("#chat-in").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#chat-form").requestSubmit(); } });
     updateEngine();
     function pushBot(res) {
@@ -637,30 +649,98 @@
       div.innerHTML = renderAnswer(res.text) +
         (res.confidence || res.gaps.length ? `<div class="badge-row">${res.confidence ? `<span class="pill ${/High/.test(res.confidence) ? "ok" : /Medium/.test(res.confidence) ? "warn" : "crit"}">${esc(t("ask.conf", { c: lv(res.confidence) }))}</span>` : ""}${res.gaps.map((g) => `<span class="pill warn" title="${esc(g)}">⚠ ${t("ask.gap")}: ${esc(g.split(/[.(;]/)[0])}</span>`).join("")}</div>` : "") +
         (res.notice ? `<p class="note" style="margin-top:8px">${esc(res.notice)}</p>` : "") +
-        (res.engine ? `<div class="engine" style="margin-top:8px">${res.engine === "offline" ? t("eng.offline") : "Claude · " + esc(res.engine)}</div>` : "");
+        (res.engine ? `<div class="engine" style="margin-top:8px">${res.engine === "offline" ? t("eng.offline") : E.ai.providerName(res.provider) + " · " + esc(res.engine)}</div>` : "");
       log.appendChild(div);
       log.scrollTop = log.scrollHeight;
     }
-    async function send(q) {
+    async function send(q, opts = {}) {
       $("#chat-in").value = "";
+      if (E.ai.isStop(q)) { E.voice.stopSpeaking(); return; }
+      const aloud = opts.voice || state.voiceMode;
       const u = document.createElement("div"); u.className = "msg user"; u.textContent = q; log.appendChild(u);
       const typing = document.createElement("div"); typing.className = "msg bot"; typing.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>'; log.appendChild(typing);
       log.scrollTop = log.scrollHeight;
+      let res;
       try {
-        const res = await E.ai.ask(q, scenario(), state.chat);
+        res = await E.ai.ask(q, scenario(), state.chat, { mode: aloud ? "voice" : "text" });
         typing.remove();
-        state.chat.push({ role: "user", content: q }, { role: "assistant", content: res.text });
+        if (!res.emergency) state.chat.push({ role: "user", content: q }, { role: "assistant", content: res.text });
         pushBot(res);
       } catch (e) {
         typing.remove();
         pushBot({ text: t("ask.error", { e: e.message }), cites: [], confidence: "", gaps: [], engine: "" });
+        return;
+      }
+      if (aloud) {
+        const r = await E.voice.speak(res.spoken || E.ai.speakable(res.text), E.lang);
+        if (!r.spoken && r.reason === "novoice") liveNote(t("v.noVoice", { lang: t("v.langName") }));
       }
     }
+
+    /* ---- voice ---- */
+    const mic = $("#mic"), live = $("#v-live");
+    let noteTimer = null;
+    function setLive(kind) {
+      const txt = { listening: t("v.listening"), transcribing: t("v.transcribing"), wake: t("v.wakeOn"), heard: t("v.wakeHeard") }[kind] || "";
+      live.textContent = txt; live.hidden = !txt; live.dataset.kind = kind || "";
+      mic.classList.toggle("rec", kind === "listening");
+    }
+    function liveNote(msg) {
+      live.textContent = msg; live.hidden = false; live.dataset.kind = "note";
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => setLive(state.wake ? "wake" : ""), 6000);
+    }
+    function beep() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext, ctx = new AC(), o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 880; g.gain.value = 0.08; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.12);
+        o.onended = () => ctx.close();
+      } catch (e) { /* no audio */ }
+    }
+    async function voiceQuestion(pre) {
+      E.voice.pauseWake();
+      E.voice.stopSpeaking();
+      try {
+        const q = pre || (await E.voice.listen(E.lang, setLive));
+        setLive("");
+        if (!q) liveNote(t("v.notHeard"));
+        else await send(q, { voice: true });
+      } catch (e) {
+        setLive("");
+        const denied = e.code === "not-allowed" || e.code === "service-not-allowed" || e.name === "NotAllowedError" || e.name === "SecurityError";
+        liveNote(denied ? t("v.denied") : e.code === "unsupported" ? t("v.engNone") : t("ask.error", { e: e.message }));
+      } finally {
+        if (state.wake) { E.voice.resumeWake(); if (live.dataset.kind !== "note") setLive("wake"); }
+      }
+    }
+    mic.addEventListener("click", () => (E.voice.isListening() ? E.voice.stopListening() : voiceQuestion()));
+    $("#v-read").addEventListener("change", (e) => { state.voiceMode = e.target.checked; store.set("voiceMode", state.voiceMode); if (!state.voiceMode) E.voice.stopSpeaking(); });
+    $("#v-wake").addEventListener("change", (e) => {
+      state.wake = e.target.checked;
+      if (!state.wake) { E.voice.stopWake(); setLive(""); return; }
+      const ok = E.voice.startWake(E.lang, (rest) => {
+        if (location.hash !== "#ask") location.hash = "ask";
+        if (rest && rest.length > 2) voiceQuestion(rest);
+        else { beep(); setLive("heard"); voiceQuestion(); }
+      });
+      if (!ok) { e.target.checked = false; state.wake = false; liveNote(t("v.wakeUnsupported")); return; }
+      setLive("wake");
+    });
+    $$("[data-cmd]", v).forEach((b) => b.addEventListener("click", () => send(t(b.dataset.cmd), { voice: true })));
+    const stopBtn = $("#v-stop");
+    stopBtn.addEventListener("click", () => E.voice.stopSpeaking());
+    E.voice.onSpeaking((on) => { if (stopBtn.isConnected) stopBtn.hidden = !on; });
+    E.voice.status().then((st) => {
+      const canListen = (st && st.stt && E.voice.canRecord()) || E.voice.canBrowserListen();
+      $("#v-eng").textContent = st && st.stt ? t("v.engOpenAI") : canListen ? t("v.engBrowser") : t("v.engNone");
+      if (!canListen) { mic.disabled = true; mic.title = t("v.engNone"); }
+      if (!E.voice.canBrowserListen()) { const w = $("#v-wake"); w.disabled = true; w.closest("label").title = t("v.wakeUnsupported"); }
+    });
   }
   async function updateEngine() {
     const on = await E.ai.checkOnline();
     const el = $("#engine");
-    if (el) el.innerHTML = on ? t("ask.online", { m: esc(on.model) }) : t("ask.offline");
+    if (el) el.innerHTML = on ? t("ask.online", { p: E.ai.providerName(on.provider), m: esc(on.model) }) : t("ask.offline");
   }
 
   /* ---------------- gaps & earth ---------------- */
