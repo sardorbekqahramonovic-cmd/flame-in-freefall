@@ -7,44 +7,89 @@
   const t = (k, v) => (E.t ? E.t(k, v) : k);
   const G_EARTH_BUOYANT_FLOW = 30; // cm/s, typical buoyancy-induced flow at a burning surface in 1 g
 
-  /* ---------------- Flammability model ----------------
-   * Physics-informed, deliberately simple and transparent:
-   * 1. Effective flow at the flame = vector sum of ventilation and buoyant flow,
-   *    u_b = 30 cm/s × (g/g0)^(1/3) (buoyant velocity scaling).
-   * 2. Limiting O2 vs effective flow is U-shaped (quenching at low flow, blow-off at
-   *    high flow), as measured for thin solids in microgravity (BASS, SSCE, NASA GRC
-   *    flammability boundary work). Its minimum sits a few points below the 1-g LOI.
-   * 3. Lower pressure raises the limit slightly: +k·ln(101.3/P).
-   * Calibrated so that at 1 g and 101.3 kPa the limit equals the material's LOI.
+  /* ---------------- Flammability model (v2, checked against NASA data) ----------------
+   * Transparent and deliberately simple. Every constant comes from a NASA measurement:
+   * 1. Normal-gravity anchor: the NASA-STD-6001 Test 1 Maximum Oxygen Concentration (MOC,
+   *    upward burning) at the pressure NASA measured it (WSTF; NTRS 20100015582, 20110008636).
+   *    Materials without a published MOC fall back to their Limiting Oxygen Index and are
+   *    flagged as unverified with a wider band.
+   * 2. Pressure: NASA WSTF's linear MOC rule, 0.607 % O2 per psi lower pressure on average
+   *    (range 0.251–0.975; NTRS 20110008636).
+   * 3. Microgravity: the minimum limit sits 2.4 points below the normal-gravity limit
+   *    (BASS-II, 1/4-in PMMA rod: 13.6% O2 in orbit vs 16% in 1 g; NASA says to derate by at
+   *    least that much; NTRS 20160000593).
+   * 4. Flow: flat bottom in microgravity, quenching below ~5 cm/s for thin fabrics (BASS-II
+   *    SIBAL quenched at 2.2–5 cm/s) and ~1.5 cm/s for thick acrylic, blow-off above ~40 cm/s
+   *    (SIBAL kept burning at 53 cm/s; NTRS 20150008962). Still air keeps a small flame-induced
+   *    flow (SSCE: paper spread in still air only when oxygen-enriched).
+   * 5. Gravity: buoyant flow 30 cm/s × g^(1/3) feeds the flame; buoyant stretch adds back the
+   *    2.4-point penalty as √g, so partial gravity is nearly the most flammable condition, as
+   *    NASA's lunar-gravity ground tests indicate (Ferkul, LPSC 2026).
    */
-  const PARAMS = {
-    thin: { uOpt: 10, delta: 2.5, lowSteep: 3.0 },
-    thick: { uOpt: 15, delta: 1.5, lowSteep: 2.4 },
-    kPressure: 3.0,
+  const PSI = 6.89476; // kPa per psi
+  const V2 = {
+    derate: 2.4,
+    slope: 0.607, slopeLo: 0.251, slopeHi: 0.975,
+    thin: { uQ: 5, kQ: 4.5 },
+    thick: { uQ: 1.5, kQ: 3.0 },
+    uBlow: 40, kBlow: 2.0,
+    uFloor: 1.5,
+    bandMoc: 1, bandEst: 2, bandLoi: 3, bandFlow: 0.5,
   };
+  const PARAMS = V2;
 
   function buoyantFlow(g) {
     return g <= 0 ? 0 : G_EARTH_BUOYANT_FLOW * Math.cbrt(g);
   }
+  /** Normal-gravity anchor: { o2, kPa, kind: "moc" | "est" | "loi" }. */
+  function anchor(material) {
+    if (material.moc) return { o2: material.moc.o2, kPa: material.moc.psia * PSI, kind: material.moc.est ? "est" : "moc" };
+    return { o2: material.loi, kPa: 101.3, kind: "loi" };
+  }
+  function flowTerm(material, u) {
+    const f = material.thin ? V2.thin : V2.thick;
+    const uu = Math.max(u, V2.uFloor);
+    const q = uu < f.uQ ? f.kQ * Math.log(f.uQ / uu) ** 2 : 0;
+    const b = uu > V2.uBlow ? V2.kBlow * Math.log(uu / V2.uBlow) ** 2 : 0;
+    return q + b;
+  }
+  /** Limiting O2 (%) for a material at effective flow uEff (cm/s), pressure p (kPa), gravity g (g0). */
+  function limitingO2(material, uEff, p, g = 0) {
+    const a = anchor(material);
+    const pTerm = V2.slope * (a.kPa - Math.max(p, 5)) / PSI;
+    const gTerm = V2.derate * Math.sqrt(Math.max(0, g));
+    return Math.min(100, a.o2 - V2.derate + flowTerm(material, uEff) + pTerm + gTerm);
+  }
+  /** Uncertainty band [lo, hi] around limitingO2: anchor quality plus the spread of NASA's pressure slopes. */
+  function band(material, uEff, p, g = 0) {
+    const a = anchor(material), loc = limitingO2(material, uEff, p, g);
+    const w = a.kind === "moc" ? V2.bandMoc : a.kind === "est" ? V2.bandEst : V2.bandLoi;
+    const dPsi = (a.kPa - Math.max(p, 5)) / PSI;
+    const sLo = dPsi * (dPsi >= 0 ? V2.slopeLo - V2.slope : V2.slopeHi - V2.slope);
+    const sHi = dPsi * (dPsi >= 0 ? V2.slopeHi - V2.slope : V2.slopeLo - V2.slope);
+    const fw = g < 1 ? V2.bandFlow : 0;
+    return [Math.max(0, loc - w - fw + Math.min(0, sLo)), Math.min(100, loc + w + fw + Math.max(0, sHi))];
+  }
 
-  function limitingO2(material, uEff, p) {
-    const prm = material.thin ? PARAMS.thin : PARAMS.thick;
+  /* v1 (LOI-calibrated, before the NASA check). Kept only to show what the check changed. */
+  const V1 = { thin: { uOpt: 10, delta: 2.5, lowSteep: 3.0 }, thick: { uOpt: 15, delta: 1.5, lowSteep: 2.4 }, kPressure: 3.0 };
+  function limitingO2v1(material, uEff, p) {
+    if (material.loi == null) return null;
+    const prm = material.thin ? V1.thin : V1.thick;
     const u = Math.max(uEff, 0.3);
-    const ref = Math.log(G_EARTH_BUOYANT_FLOW / prm.uOpt) ** 2;
-    const A = prm.delta / ref; // so LOC(u=30)=LOI at 1 atm
+    const A = prm.delta / Math.log(G_EARTH_BUOYANT_FLOW / prm.uOpt) ** 2;
     const x = Math.log(u / prm.uOpt);
     const steep = x < 0 ? prm.lowSteep : 1;
-    const locMin = material.loi - prm.delta;
-    const pTerm = PARAMS.kPressure * Math.log(101.3 / Math.max(p, 5));
-    return Math.min(100, locMin + A * steep * x * x + pTerm);
+    return Math.min(100, material.loi - prm.delta + A * steep * x * x + V1.kPressure * Math.log(101.3 / Math.max(p, 5)));
   }
 
   function assess({ o2, p, g, vent, materialId }) {
     const material = E.MATERIALS.find((m) => m.id === materialId) || E.MATERIALS[0];
     const ub = buoyantFlow(g);
     const uEff = Math.sqrt(vent * vent + ub * ub);
-    const loc = limitingO2(material, uEff, p);
-    const loc1g = limitingO2(material, Math.sqrt(vent * vent + G_EARTH_BUOYANT_FLOW ** 2), 101.3);
+    const loc = limitingO2(material, uEff, p, g);
+    const range = band(material, uEff, p, g);
+    const loc1g = limitingO2(material, Math.sqrt(vent * vent + G_EARTH_BUOYANT_FLOW ** 2), 101.3, 1);
     const margin = o2 - loc;
     const ppO2 = (o2 / 100) * p;
     const cls = margin < -3 ? 0 : margin < 0 ? 1 : margin < 6 ? 2 : 3;
@@ -54,16 +99,68 @@
     const coverage = evidenceCoverage({ o2, p, g, material });
     // 0..100 risk gauge
     const gauge = Math.max(0, Math.min(100, 50 + margin * 5));
-    return { material, ub, uEff, loc, loc1g, margin, ppO2, state, cls, text, spreadIdx, coverage, gauge };
+    return { material, anchor: anchor(material), ub, uEff, loc, range, loc1g, margin, ppO2, state, cls, text, spreadIdx, coverage, gauge };
   }
 
-  function curve(material, p, maxU = 60) {
+  function curve(material, p, maxU = 60, g = 0) {
     const pts = [];
     for (let i = 0; i <= 120; i++) {
       const u = 0.5 * Math.pow(maxU / 0.5, i / 120);
-      pts.push([u, limitingO2(material, u, p)]);
+      pts.push([u, limitingO2(material, u, p, g)]);
     }
     return pts;
+  }
+
+  /* ---------------- Validation against NASA measurements ----------------
+   * kind "limit": NASA measured a limit (or a range for it); "burns": a flame survived at o2;
+   * "noburn": no flame survived at o2. tuned = the observation was used to set a constant. */
+  const kPa = (psia) => psia * PSI;
+  const CHECKS = [
+    { id: "c-nomex", mat: "nomex", o2: 25, p: kPa(10.2), g: 1, vent: 0, kind: "limit", lo: 25, hi: 26, src: "hirsch2010", tuned: true },
+    { id: "c-kapton", mat: "kapton", o2: 26, p: kPa(14.7), g: 1, vent: 0, kind: "limit", lo: 26, hi: 27, src: "hirsch2011", tuned: true },
+    { id: "c-silicone", mat: "silicone", o2: 22, p: kPa(14.7), g: 1, vent: 0, kind: "limit", lo: 22, hi: 23, src: "hirsch2011", tuned: true },
+    { id: "c-pmma", mat: "pmma", o2: 14, p: kPa(14.7), g: 1, vent: 0, kind: "limit", lo: 14, hi: 15, src: "hirsch2011", tuned: true },
+    { id: "i-nomex-uloi", mat: "nomex", o2: 23.5, p: 101.3, g: 1, vent: 0, kind: "limit", lo: 20.5, hi: 22.5, src: "bass2013", tuned: false },
+    { id: "i-pmma-ug", mat: "pmma", o2: 13.6, p: 101.3, g: 0, vent: 3, kind: "burns", src: "bass2014", tuned: true },
+    { id: "i-sibal-53", mat: "sibal", o2: 16.9, p: 101.3, g: 0, vent: 53, kind: "burns", src: "zhao2015", tuned: true },
+    { id: "i-sibal-q", mat: "sibal", o2: 16.9, p: 101.3, g: 0, vent: 2.8, kind: "noburn", src: "zhao2015", tuned: true },
+    { id: "i-sibal-ign", mat: "sibal", o2: 16.4, p: 101.3, g: 0, vent: 10, kind: "noburn", src: "zhao2015", tuned: false },
+    { id: "i-nomex-ug", mat: "nomex", o2: 21.5, p: 101.3, g: 0, vent: 15, kind: "noburn", src: "bass2013", tuned: false },
+    { id: "i-still", mat: "sibal", o2: 21, p: 101.3, g: 0, vent: 0, kind: "noburn", src: "bass2019", tuned: true },
+    { id: "i-ssce", mat: "paper", o2: 35, p: 101.3, g: 0, vent: 0, kind: "burns", src: "ssce", tuned: true },
+  ];
+  /** verdict: "ok" | "unsafe" (model says no flame where NASA saw one, or a limit too high) | "cons" (too cautious) */
+  function verdict(c, loc) {
+    if (loc == null) return "na";
+    if (c.kind === "limit") return loc > c.hi + 0.05 ? "unsafe" : loc < c.lo - 0.05 ? "cons" : "ok";
+    if (c.kind === "burns") return loc <= c.o2 ? "ok" : "unsafe";
+    return loc >= c.o2 ? "ok" : "cons";
+  }
+  function validate() {
+    const rows = CHECKS.map((c) => {
+      const m = E.MATERIALS.find((x) => x.id === c.mat);
+      const ub = buoyantFlow(c.g), uEff = Math.sqrt(c.vent * c.vent + ub * ub);
+      const v1 = limitingO2v1(m, uEff, c.p), v2 = limitingO2(m, uEff, c.p, c.g);
+      return { ...c, material: m, v1, v2, v1v: verdict(c, v1), v2v: verdict(c, v2) };
+    });
+    const tally = (k) => ({ ok: rows.filter((r) => r[k] === "ok").length, unsafe: rows.filter((r) => r[k] === "unsafe").length, cons: rows.filter((r) => r[k] === "cons").length });
+    const indep = rows.filter((r) => !r.tuned);
+    const tallyI = (k) => ({ ok: indep.filter((r) => r[k] === "ok").length, unsafe: indep.filter((r) => r[k] === "unsafe").length, cons: indep.filter((r) => r[k] === "cons").length });
+    return { rows, v1: tally("v1v"), v2: tally("v2v"), v1i: tallyI("v1v"), v2i: tallyI("v2v"), n: rows.length, nIndep: indep.length };
+  }
+
+  /* ---------------- FM2: pre-registered predictions ----------------
+   * FM2 (Flammability of Materials on the Moon) plans four upward-burning tests in lunar gravity at
+   * 8.2 psia with 37, 33, 29 and 25% O2 (Ferkul, LPSC 2026, NTRS 20260001966). NASA expects its test
+   * fabric to have a lunar limit of 24–26%. These predictions were frozen on FM2_FROZEN, before FM2 flies. */
+  const FM2_FROZEN = "2026-11-14";
+  const FM2_TESTS = [37, 33, 29, 25];
+  function fm2Predictions(materialIds = ["nomex", "sibal", "pet"]) {
+    const g = 0.166, p = kPa(8.2), uEff = buoyantFlow(g);
+    return materialIds.map((id) => E.MATERIALS.find((m) => m.id === id)).filter(Boolean).map((m) => {
+      const loc = limitingO2(m, uEff, p, g), range = band(m, uEff, p, g);
+      return { material: m, loc, range, tests: FM2_TESTS.map((o2) => ({ o2, call: o2 > range[1] ? "burn" : o2 < range[0] ? "out" : "edge" })) };
+    });
   }
 
   function envDist(inv, o2, p) {
@@ -249,5 +346,5 @@
     return { search };
   }
 
-  E.model = { assess, curve, buoyantFlow, limitingO2, rank, DEFAULT_WEIGHTS, envDist, buildChunks, makeIndex, tokens, PARAMS };
+  E.model = { assess, curve, buoyantFlow, limitingO2, limitingO2v1, band, anchor, validate, CHECKS, fm2Predictions, FM2_FROZEN, FM2_TESTS, rank, DEFAULT_WEIGHTS, envDist, buildChunks, makeIndex, tokens, PARAMS };
 })();

@@ -53,18 +53,34 @@ Cost controls for a small prepaid balance: questions use a cheap model with a ca
 
 Without keys (for example on GitHub Pages) the app runs fully with the offline reasoner, and voice uses the browser's built-in speech (best in Chrome or Edge). For Uzbek, a natural Uzbek voice installed in the browser (Microsoft Edge ships them) is used first, otherwise the OpenAI voice. Uzbek answers are rewritten for speech before they are read (numbers, units, Roman numerals and acronyms become Uzbek words), because voices otherwise read digits in English.
 
-**Tests:** `npm test` checks the serverless functions with a mocked API (provider choice, voice requests, cost caps, origin check, rate limit), and the flammability model calibration, the physical trends it must reproduce, ranking integrity, citations and retrieval, and that the Russian and Uzbek translations are complete and answer every suggested question.
+**Tests:** `npm test` checks the serverless functions with a mocked API (provider choice, voice requests, cost caps, origin check, rate limit), and the flammability model calibration, the NASA validation checks (no unsafe misses), the frozen FM2 predictions, the physical trends it must reproduce, ranking integrity, citations and retrieval, and that the Russian and Uzbek translations are complete and answer every suggested question.
 
 ## The flammability model (Fire Risk Explorer)
 
-Kept deliberately simple so judges and engineers can audit it:
+Kept deliberately simple so judges and engineers can audit it. Version 2 takes every constant from a NASA measurement:
 
-1. Flow at the flame = vector sum of ventilation and buoyant flow, with buoyant flow ≈ 30 cm/s × (g/g₀)^⅓.
-2. The limiting O₂ concentration is U-shaped in that flow, as measured for solids in microgravity: oxygen starvation and quenching at very low flow (SSCE), a minimum a few points below the 1 g limit at low-speed flow (BASS), blow-off at high flow.
-3. Lower pressure raises the limit slightly (+3 × ln(101.3 / P)).
-4. Calibrated so that at 1 g and 1 atm the limit equals the material's Limiting Oxygen Index.
+1. **Normal-gravity anchor:** NASA's upward-burning limit, the NASA-STD-6001 Test 1 Maximum Oxygen Concentration (MOC), at the pressure NASA measured it (NASA White Sands, [NTRS 20100015582](https://ntrs.nasa.gov/citations/20100015582), [NTRS 20110008636](https://ntrs.nasa.gov/citations/20110008636)). 7 of 11 materials have a NASA value; the rest fall back to the Limiting Oxygen Index and are flagged as unverified with a ±3-point band.
+2. **Pressure:** NASA's measured linear rule, the limit rises 0.607 points per psi of lower pressure (range 0.251–0.975).
+3. **Microgravity:** the lowest limit sits 2.4 points below the normal-gravity limit (BASS-II: a 1/4-in acrylic rod burned at 13.6 % O₂ in orbit against 16 % in 1 g, [NTRS 20160000593](https://ntrs.nasa.gov/citations/20160000593)).
+4. **Flow:** quenching below about 5 cm/s for thin fabrics (BASS-II cotton-fiberglass quenched at 2.2–5 cm/s) and 1.5 cm/s for thick acrylic, blow-off above about 40 cm/s ([NTRS 20150008962](https://ntrs.nasa.gov/citations/20150008962)). Still air keeps a small flame-induced flow (SSCE: paper spread in still air only when oxygen-enriched).
+5. **Gravity:** buoyant flow 30 cm/s × (g/g₀)^⅓ feeds the flame, and buoyant stretch adds the 2.4-point penalty back as √g. Partial gravity therefore comes out as nearly the most flammable condition, as NASA's lunar-gravity ground tests indicate ([Ferkul, LPSC 2026](https://ntrs.nasa.gov/citations/20260001966)).
 
-It reproduces the key flight trends: thin fuels self-extinguish in quiescent microgravity, burn with ventilation, Nomex is safe in ISS air but flammable at 34 % O₂ / 8.2 psia, and PTFE stays non-flammable. It is a screening and teaching tool, not a certification method (NASA-STD-6001 remains the standard). Partial-gravity results are always flagged as extrapolations because PSI has no lunar or Mars combustion data yet.
+**How accurate is it?** The app checks the model live against 12 NASA measurements (Fire Risk Explorer → "How accurate is this model?"):
+
+| | Correct | Unsafe misses | Too cautious |
+|---|---|---|---|
+| v1, calibrated to the Limiting Oxygen Index | 3 | 8 | 1 |
+| v2, anchored to NASA data | 10 | 0 | 2 |
+
+An unsafe miss means the model called a material safe where NASA saw it burn or measured a lower limit. The LOI turned out to be a poor guide to NASA's upward test: Kapton film's LOI is 37 % but its NASA MOC is 26 % at 14.7 psia, so v1 wrongly called Kapton safe in Moon-base air. Nine of the twelve checks were used to set a constant (marked † in the app); three are independent. The two cautious misses are narrow BASS samples that burned less easily than the model allows.
+
+**Pre-registered FM2 predictions.** NASA's FM2 will burn fabric upward in lunar gravity at 8.2 psia with 37, 33, 29 and 25 % O₂. VULKAN predicts Nomex burns at 37, 33 and 29 % and is too close to call at 25 % (lunar limit 24.8 %, range 22.6–27.0 %), inside NASA's own expected 24–26 % window for its test fabric. The predictions were frozen in this repository on 2026-11-14, before FM2 flies.
+
+It is a screening and teaching tool, not a certification method (NASA-STD-6001 remains the standard). Partial-gravity results are always flagged as extrapolations because PSI has no lunar or Mars combustion data yet.
+
+## Works offline
+
+VULKAN is an installable web app. After the first visit, a service worker (`sw.js`) keeps the app files, so it opens and answers questions with no network: the curated record, the flammability model and the offline reasoner all run in the browser. Live AI answers and the NTRS search return when the network does.
 
 ## Data
 

@@ -15,22 +15,55 @@ const E = window.VULKAN, M = E.model;
 E.setLang("en");
 
 for (const m of E.MATERIALS) {
-  // calibration: at 1 g, sea level, no ventilation, the limit equals the LOI
-  const a = M.assess({ o2: 21, p: 101.3, g: 1, vent: 0, materialId: m.id });
-  assert.ok(Math.abs(a.loc - m.loi) < 0.05, `${m.id}: 1 g limit ${a.loc} should equal LOI ${m.loi}`);
-  // microgravity minimum is below the 1 g limit (BASS trend)
-  const min = Math.min(...M.curve(m, 101.3).map(([, o]) => o));
-  assert.ok(min < m.loi, `${m.id}: microgravity minimum should be below LOI`);
+  // calibration: at 1 g, no ventilation, at the pressure NASA measured it, the limit equals the anchor
+  // (NASA-STD-6001 Test 1 MOC where published, otherwise the LOI)
+  const an = M.anchor(m);
+  const a = M.assess({ o2: 21, p: an.kPa, g: 1, vent: 0, materialId: m.id });
+  assert.ok(Math.abs(a.loc - an.o2) < 0.05, `${m.id}: 1 g limit ${a.loc} should equal its anchor ${an.o2}`);
+  assert.ok(a.range[0] < a.loc && a.loc < a.range[1], `${m.id}: band brackets the estimate`);
+  // microgravity minimum is below the 1 g limit (BASS-II: 2.4 points)
+  const min = Math.min(...M.curve(m, an.kPa).map(([, o]) => o));
+  assert.ok(Math.abs(an.o2 - min - 2.4) < 0.05, `${m.id}: microgravity minimum should sit 2.4 points below the 1 g limit`);
 }
-// quiescent microgravity starves thin fuels (SSCE trend)
-assert.equal(M.assess({ o2: 21, p: 101.3, g: 0, vent: 0, materialId: "paper" }).cls, 0);
+// NASA pressure rule: lower pressure raises the limit by ~0.6 points per psi
+{
+  const hi = M.assess({ o2: 21, p: 101.3, g: 1, vent: 0, materialId: "nomex" }).loc;
+  const lo = M.assess({ o2: 21, p: 70.3, g: 1, vent: 0, materialId: "nomex" }).loc;
+  assert.ok(Math.abs((lo - hi) / (31 / 6.89476) - 0.607) < 0.01, "pressure slope 0.607 %/psi");
+}
+// still microgravity air starves thin fuels (BASS-II: flames always quenched when the fan stopped)
+assert.ok(M.assess({ o2: 21, p: 101.3, g: 0, vent: 0, materialId: "paper" }).cls <= 1);
+// ... but oxygen-enriched still air lets paper burn (SSCE, 35% O2)
+assert.ok(M.assess({ o2: 35, p: 101.3, g: 0, vent: 0, materialId: "paper" }).cls >= 2);
 // paper burns in ISS air with ventilation
 assert.ok(M.assess({ o2: 21, p: 101.3, g: 0, vent: 10, materialId: "paper" }).cls >= 2);
-// Nomex: safe in ISS air, flammable in the 8.2 psia / 34% exploration atmosphere
-assert.equal(M.assess({ o2: 21, p: 101.3, g: 0, vent: 10, materialId: "nomex" }).cls, 0);
+// Nomex: passes NASA's 1 g test in ISS air, flammable in the 8.2 psia / 34% exploration atmosphere
+assert.ok(M.assess({ o2: 21, p: 101.3, g: 1, vent: 0, materialId: "nomex" }).cls <= 1);
 assert.ok(M.assess({ o2: 34, p: 56.5, g: 0.166, vent: 15, materialId: "nomex" }).cls >= 2);
+// Kapton film: NASA MOC 26% at 14.7 psia, so it can burn in Moon-base air (the old LOI 37% said it could not)
+assert.ok(M.assess({ o2: 30, p: 70.3, g: 0.166, vent: 10, materialId: "kapton" }).cls >= 2);
 // PTFE stays non-flammable even at 34%
 assert.equal(M.assess({ o2: 34, p: 56.5, g: 0.166, vent: 15, materialId: "ptfe" }).cls, 0);
+// partial gravity is nearly the most flammable condition: lunar limit below the 1 g limit at the same pressure
+assert.ok(M.assess({ o2: 30, p: 56.5, g: 0.166, vent: 0, materialId: "nomex" }).loc < M.assess({ o2: 30, p: 56.5, g: 1, vent: 0, materialId: "nomex" }).loc);
+// validation against NASA measurements: v2 never calls a material safe where NASA saw it burn
+{
+  const v = M.validate();
+  assert.equal(v.n, M.CHECKS.length);
+  assert.equal(v.v2.unsafe, 0, "v2 has no unsafe misses");
+  assert.ok(v.v1.unsafe >= 5, "v1 (LOI-based) had unsafe misses");
+  assert.ok(v.v2.ok >= 10, `v2 correct on ${v.v2.ok} of ${v.n}`);
+  for (const r of v.rows) assert.ok(E.SRC[r.src] || r.src === "ssce", `${r.id}: known source`);
+}
+// FM2 pre-registered predictions: Nomex burns at 37/33/29% and is too close to call at 25%;
+// its lunar limit falls inside NASA's expected 24–26% window for the FM2 fabric
+{
+  const nomex = M.fm2Predictions().find((x) => x.material.id === "nomex");
+  assert.deepEqual(nomex.tests.map((x) => x.call), ["burn", "burn", "burn", "edge"]);
+  assert.ok(nomex.loc >= 24 && nomex.loc <= 26, `Nomex lunar limit ${nomex.loc}`);
+}
+// every NASA-anchored material cites a known source
+for (const m of E.MATERIALS) if (m.moc) assert.ok(E.SRC[m.moc.src], `${m.id}: MOC source`);
 // partial gravity always carries a data-gap flag
 assert.ok(M.assess({ o2: 30, p: 70.3, g: 0.166, vent: 10, materialId: "pmma" }).coverage.flags.length > 0);
 // ranking covers every investigation and is sorted
@@ -76,7 +109,7 @@ for (const lang of ["ru", "uz"]) {
   }
 }
 E.setLang("en");
-assert.equal(M.assess({ o2: 21, p: 101.3, g: 0, vent: 10, materialId: "nomex" }).state, "Self-extinguishing");
+assert.equal(M.assess({ o2: 21, p: 101.3, g: 0, vent: 10, materialId: "ptfe" }).state, "Self-extinguishing");
 
 // ---- voice: emergency commands, stop words and short spoken answers in every language ----
 for (const [lang, fire, smoke, stop] of [["en", "Fire!", "smoke", "stop"], ["ru", "Пожар!", "дым", "стоп"], ["uz", "Yong'in!", "tutun", "to'xta"]]) {

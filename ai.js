@@ -47,6 +47,7 @@
   ];
 
   async function checkOnline() {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
     if (online !== null) return online;
     try {
       const ctrl = new AbortController();
@@ -267,7 +268,7 @@
     const contexts = hits.map((h) => ({ id: h.c.inv || h.c.id, title: h.c.title, text: h.c.text }));
     if (cond) {
       const a = E.model.assess(cond);
-      contexts.unshift({ id: "MODEL", title: "VULKAN flammability model output", text: `Material ${a.material.label} (1-g LOI ${a.material.loi}%), ${cond.o2}% O2, ${cond.p.toFixed(1)} kPa, gravity ${cond.g} g, ventilation ${cond.vent} cm/s. Estimated limiting O2 ${a.loc.toFixed(1)}%, margin ${a.margin.toFixed(1)} points, state "${a.state}". Effective flow ${a.uEff.toFixed(1)} cm/s. Evidence coverage ${a.coverage.level}: ${a.coverage.note} ${a.coverage.flags.join(" ")}` });
+      contexts.unshift({ id: "MODEL", title: "VULKAN flammability model output", text: `Material ${a.material.label} (1-g anchor: ${a.anchor.kind === "loi" ? `LOI ${a.anchor.o2}%, unverified` : `NASA-STD-6001 Test 1 MOC ${a.anchor.o2}% at ${(a.anchor.kPa / 6.89476).toFixed(1)} psia`}; likely limit range ${a.range[0].toFixed(1)}-${a.range[1].toFixed(1)}%), ${cond.o2}% O2, ${cond.p.toFixed(1)} kPa, gravity ${cond.g} g, ventilation ${cond.vent} cm/s. Estimated limiting O2 ${a.loc.toFixed(1)}%, margin ${a.margin.toFixed(1)} points, state "${a.state}". Effective flow ${a.uEff.toFixed(1)} cm/s. Evidence coverage ${a.coverage.level}: ${a.coverage.note} ${a.coverage.flags.join(" ")}` });
     }
     const r = await fetch(API, {
       method: "POST",
@@ -320,5 +321,7 @@
   }
 
   const providerName = (p) => ((p || (online && online.provider)) === "openai" ? "OpenAI" : "Claude");
+  // network came back: check the AI service again on the next question
+  if (typeof window.addEventListener === "function") window.addEventListener("online", () => { online = null; });
   E.ai = { ask, interpret, checkOnline, getIndex, parseConditions, emergency, isStop, speakable, providerName };
 })();

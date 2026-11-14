@@ -11,6 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#070b16">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%235ab0ff' opacity='.35'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%235ab0ff'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -61,6 +64,7 @@
   <div class="wrap">
     <p data-i18n-html="footer.1">Built for the NASA Space Apps Challenge 2026, “Flame in Freefall”. Data curated from public NASA sources: the PSI Data Repository, NASA Glenn Combustion Science, NASA investigation fact sheets and <em>A Researcher's Guide to ISS Combustion Science</em>. Each record links to its source.</p>
     <p data-i18n-html="footer.2">The Fire Risk Explorer is a transparent, physics-informed screening model for exploring trends. It is not a substitute for NASA-STD-6001 material certification.</p>
+    <p><span data-i18n="footer.offline">Works offline: after your first visit VULKAN opens and answers with no network, and you can install it like an app.</span> <button type="button" class="btn small" id="install-btn" hidden data-i18n="footer.install">Install VULKAN</button></p>
     <p data-i18n-html="footer.3">AI use: the code was written with help from Anthropic's Claude and reviewed by the team. Ask VULKAN answers are AI-generated from the cited NASA sources, and spoken answers use an AI-generated voice (OpenAI text-to-speech) or your browser's voice. No NASA logos or branding are used.</p>
   </div>
 </footer>

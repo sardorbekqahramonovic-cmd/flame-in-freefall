@@ -215,6 +215,7 @@
           <div class="flame-card"><canvas id="flame-ug" aria-label="${esc(t("ov.flame2Aria"))}"></canvas><div class="cap">${t("ov.flame2")}</div></div>
         </div>
       </div>
+      ${gapLine()}
       <section class="steps" aria-labelledby="steps-h">
         <h2 class="sr-only" id="steps-h">${t("ov.stepsTitle")}</h2>
         <button type="button" class="step" data-step="mission"><span class="step-n">1</span><span><b>${t("ov.s1t")}</b><span>${t("ov.s1d")}</span></span></button>
@@ -252,6 +253,31 @@
     if (stepM) stepM.addEventListener("click", () => { window.scrollTo({ top: 0, behavior: "smooth" }); const sel = $("#scenario"); sel.focus(); if (sel.showPicker) { try { sel.showPicker(); } catch (e) { /* not allowed without a gesture */ } } });
     drawFlame($("#flame-1g"), false);
     drawFlame($("#flame-ug"), true);
+  }
+  /* The evidence gap in one line: which solid-fuel flight investigations tested which air. */
+  function evidenceGap() {
+    const solids = E.INVESTIGATIONS.filter((i) => i.category === "solid" && !i.planned);
+    const covers = (i, o2, p) => o2 >= i.o2[0] && o2 <= i.o2[1] && p >= i.p[0] && p <= i.p[1];
+    const ref = (id) => E.REF_ATMOS.find((r) => r.id === id);
+    const sea = ref("sea"), moon = ref("lunar"), ea = ref("ea");
+    return {
+      solids,
+      iss: solids.filter((i) => covers(i, sea.o2, sea.p)),
+      moon: solids.filter((i) => covers(i, moon.o2, moon.p) && covers(i, ea.o2, ea.p)),
+      gravity: solids.filter((i) => i.gravity),
+    };
+  }
+  function gapLine() {
+    const g = evidenceGap(), n = g.solids.length;
+    return `<section class="panel gapline" aria-labelledby="gapline-h">
+        <h2 class="eyebrow" id="gapline-h">${t("gl.title")}</h2>
+        <div class="gapline-row">
+          <div class="gl"><span class="gl-n num">${g.iss.length}<small>/${n}</small></span><span class="gl-l">${t("gl.iss")}</span></div>
+          <div class="gl warn"><span class="gl-n num">${g.moon.length}<small>/${n}</small></span><span class="gl-l">${t("gl.moon")}</span></div>
+          <div class="gl hot"><span class="gl-n num">${g.gravity.length}<small>/${n}</small></span><span class="gl-l">${t("gl.grav")}</span></div>
+        </div>
+        <p class="note">${t("gl.note", { n, names: g.solids.map((i) => esc(i.name)).join(", ") })} <a href="#map">${t("gl.map")}</a></p>
+      </section>`;
   }
   function insightCard(s) {
     return `<article class="insight"><div class="rank">${s.rank}</div><div><h3>${esc(s.title)}</h3><p style="font-size:.92rem">${esc(s.text)}</p><p style="font-size:.88rem;margin-top:6px"><strong>${t("ov.action")}</strong> ${esc(s.action)}</p><div class="meta">${s.tags.map((g) => `<span class="pill ${g === "gap" ? "warn" : g === "suppression" ? "ember" : "flame"}">${esc(t("tag." + g))}</span>`).join("")}${s.cites.map((c) => `<button class="cite" data-inv="${c}" type="button">${esc(invById(c).name)}</button>`).join("")}</div></div></article>`;
@@ -505,7 +531,7 @@
       <div class="split split-narrow-left">
         <div class="panel controls">
           <div class="presets">${E.SCENARIOS.map((x) => `<button class="chip" data-preset="${x.id}" type="button" aria-pressed="${x.id === s.id}">${esc(x.label.split(" (")[0])}</button>`).join("")}</div>
-          <div class="ctrl"><label for="sim-mat">${t("rk.material")}</label><select id="sim-mat">${E.MATERIALS.map((m) => `<option value="${m.id}" ${m.id === sim.materialId ? "selected" : ""}>${esc(m.label)} · LOI ${m.loi}%</option>`).join("")}</select><div class="hint" id="mat-note"></div></div>
+          <div class="ctrl"><label for="sim-mat">${t("rk.material")}</label><select id="sim-mat">${E.MATERIALS.map((m) => `<option value="${m.id}" ${m.id === sim.materialId ? "selected" : ""}>${esc(m.label)} · ${anchorShort(m)}</option>`).join("")}</select><div class="hint" id="mat-note"></div></div>
           <div class="ctrl"><label for="sim-o2">${t("rk.oxygen")} <output id="o-o2"></output></label><input type="range" id="sim-o2" min="15" max="100" step="0.5" value="${sim.o2}"></div>
           <div class="ctrl"><label for="sim-p">${t("rk.pressure")} <output id="o-p"></output></label><input type="range" id="sim-p" min="20" max="160" step="0.5" value="${sim.p}"></div>
           <div class="ctrl"><label for="sim-g">${t("rk.gravity")} <output id="o-g"></output></label><input type="range" id="sim-g" min="0" max="1" step="0.001" value="${sim.g}"><div class="hint">${t("rk.gHint")}</div></div>
@@ -520,7 +546,9 @@
             <div class="panel"><h3>${t("rk.evidence")}</h3><div id="evidence" style="margin-top:8px"></div></div>
           </div>
         </div>
-      </div>`;
+      </div>
+      ${validationPanel()}
+      ${fm2Panel()}`;
     const inputs = { o2: "#sim-o2", p: "#sim-p", g: "#sim-g", vent: "#sim-v" };
     Object.entries(inputs).forEach(([k, sel]) => $(sel).addEventListener("input", (e) => { sim[k] = parseFloat(e.target.value); updateRisk(); }));
     $("#sim-mat").addEventListener("change", (e) => { sim.materialId = e.target.value; store.set("material", sim.materialId); updateRisk(); });
@@ -547,17 +575,77 @@
       <p>${a.text}</p>
       <div class="gauge" aria-hidden="true"><span style="left:${a.gauge}%"></span></div>
       <div class="metrics">
-        <div><div class="k">${t("rk.loc")}</div><div class="v">${n1(a.loc)}%</div></div>
+        <div><div class="k">${t("rk.loc")}</div><div class="v">${n1(a.loc)}%</div><div class="k">${t("rk.range", { lo: n1(a.range[0]), hi: n1(a.range[1]) })}</div></div>
         <div><div class="k">${t("rk.margin")}</div><div class="v" style="color:${a.margin > 0 ? "var(--crit)" : "var(--ok)"}">${a.margin >= 0 ? "+" : ""}${n1(a.margin)} ${t("rk.pts")}</div></div>
         <div><div class="k">${t("rk.pp")}</div><div class="v">${n1(a.ppO2)}${KPA()}</div></div>
         <div><div class="k">${t("rk.ueff")}</div><div class="v">${n1(a.uEff)}${CMS()}</div></div>
       </div>
+      <p class="note anchor-note">${anchorLong(a.material)}</p>
       ${a.coverage.flags.map((f) => `<p class="note" style="border-color:var(--warn)">⚠ ${esc(f)}</p>`).join("")}`;
     drawRiskChart(a);
     // gravity table
     const worlds = [[t("w.orbit"), 0], [t("w.moon"), 0.166], [t("w.mars"), 0.378], [t("w.earth"), 1]];
     $("#gravity-table").innerHTML = `<thead><tr><th>${t("rk.thG")}</th><th class="num">${t("rk.thLimit")}</th><th>${t("rk.thState")}</th></tr></thead><tbody>${worlds.map(([n, g]) => { const r = M.assess({ ...sim, g }); return `<tr><td>${n}</td><td class="num">${n1(r.loc)}%</td><td><span class="pill ${["ok", "warn", "ember", "crit"][r.cls]}">${r.state}</span></td></tr>`; }).join("")}</tbody>`;
     $("#evidence").innerHTML = `<p style="font-size:.9rem">${esc(a.coverage.note)}</p><div style="display:grid;gap:8px;margin-top:10px">${a.coverage.near.map((n) => `<div style="font-size:.86rem"><button class="cite" data-inv="${n.inv.id}" type="button">${esc(n.inv.name)}</button> ${n.d === 0 ? t("rk.testedHere") : t("rk.nearest")}: <span class="mono">${range(n.inv.o2, false, "%")} · ${range(n.inv.p, false, KPA())}</span></div>`).join("")}</div><p class="note" style="margin-top:10px">${t("rk.physics")}</p>`;
+  }
+  function anchorShort(m) {
+    const a = M.anchor(m);
+    return a.kind === "loi" ? t("rk.optLoi", { o2: n1(a.o2) }) : t("rk.optMoc", { o2: n1(a.o2) });
+  }
+  function srcLink(key) {
+    const sr = E.SRC[key] || E.SRC.guide;
+    return `<a href="${sr.url}" target="_blank" rel="noopener">${esc(sr.label)}</a>`;
+  }
+  function anchorLong(m) {
+    const a = M.anchor(m), ps = n1(a.kPa / 6.89476);
+    if (a.kind === "moc") return t("rk.anchorMoc", { o2: n1(a.o2), psia: ps, src: srcLink(m.moc.src) });
+    if (a.kind === "est") return t("rk.anchorEst", { o2: n1(a.o2), psia: ps, src: srcLink(m.moc.src) });
+    return t("rk.anchorLoi", { o2: n1(a.o2) });
+  }
+  function checkCond(c) {
+    const parts = [c.g === 0 ? t("va.orbit") : c.g === 1 ? "1 g" : `${E.num(c.g, 3)} g`, `${psia(c.p)} psia`];
+    if (c.g < 1) parts.push(c.vent === 0 ? t("va.still") : `${n1(c.vent)}${CMS()}`);
+    return parts.join(" · ");
+  }
+  function checkObs(c) {
+    if (c.id === "i-nomex-uloi") return t("va.obsUloi", { o2: n1(c.o2), lo: n1(c.lo), hi: n1(c.hi) });
+    if (c.kind === "limit") return t("va.obsMoc", { o2: n1(c.o2) });
+    return t(c.kind === "burns" ? "va.obsBurns" : "va.obsNoburn", { o2: n1(c.o2) });
+  }
+  const VCLS = { ok: "ok", unsafe: "crit", cons: "warn", na: "" };
+  function vCell(loc, v, lbl) {
+    if (loc == null) return `<td class="num muted" data-l="${lbl}">—</td>`;
+    return `<td class="num" data-l="${lbl}"><span>${n1(loc)}% <span class="pill ${VCLS[v]}">${t("va.v." + v)}</span></span></td>`;
+  }
+  function validationPanel() {
+    const v = M.validate();
+    const tally = (x) => `<span class="pill ok">${t("va.ok", { n: x.ok })}</span> <span class="pill crit">${t("va.unsafe", { n: x.unsafe })}</span> <span class="pill warn">${t("va.cons", { n: x.cons })}</span>`;
+    return `<section class="panel model-check" id="validation" aria-labelledby="va-h">
+        <div class="panel-title"><h2 id="va-h">${t("va.title")}</h2><span class="eyebrow">${t("va.eyebrow", { n: v.n })}</span></div>
+        <p class="lede-sm">${t("va.lede", { n: v.n, u: v.v1.unsafe })}</p>
+        <div class="va-sum">
+          <div class="va-col"><div class="k">${t("va.before")}</div><div>${tally(v.v1)}</div></div>
+          <div class="va-col now"><div class="k">${t("va.now")}</div><div>${tally(v.v2)}</div></div>
+        </div>
+        <div class="table-wrap"><table class="va-table cards">
+          <thead><tr><th>${t("va.thMat")}</th><th>${t("va.thCond")}</th><th>${t("va.thObs")}</th><th class="num">${t("va.thBefore")}</th><th class="num">${t("va.thNow")}</th><th>${t("va.thSrc")}</th></tr></thead>
+          <tbody>${v.rows.map((r) => `<tr><td class="t">${esc(r.material.label)}${r.tuned ? " †" : ""}</td><td class="mono" data-l="${t("va.thCond")}">${checkCond(r)}</td><td data-l="${t("va.thObs")}">${checkObs(r)}</td>${vCell(r.v1, r.v1v, t("va.thBefore"))}${vCell(r.v2, r.v2v, t("va.thNow"))}<td class="src" data-l="${t("va.thSrc")}">${srcLink(r.src === "ssce" ? "guide" : r.src)}</td></tr>`).join("")}</tbody>
+        </table></div>
+        <p class="note">${t("va.tuned", { n: v.nIndep })} ${t("va.limits")}</p>
+      </section>`;
+  }
+  function fm2Panel() {
+    const preds = M.fm2Predictions();
+    const cell = (x, k) => `<td class="num tst" data-l="${M.FM2_TESTS[k]}% O₂"><span class="pill ${x.call === "burn" ? "crit" : x.call === "edge" ? "warn" : "ok"}">${t("fm." + x.call)}</span></td>`;
+    return `<section class="panel model-check" id="fm2" aria-labelledby="fm-h">
+        <div class="panel-title"><h2 id="fm-h">${t("fm.title")}</h2><span class="eyebrow">${t("fm.frozen", { d: M.FM2_FROZEN })}</span></div>
+        <p class="lede-sm">${t("fm.lede")}</p>
+        <div class="table-wrap"><table class="va-table cards fm">
+          <thead><tr><th>${t("va.thMat")}</th><th class="num">${t("fm.thLimit")}</th>${M.FM2_TESTS.map((o) => `<th class="num">${o}% O₂</th>`).join("")}</tr></thead>
+          <tbody>${preds.map((p) => `<tr><td class="t">${esc(p.material.label)}</td><td class="num lim" data-l="${t("fm.thLimit")}"><span>${n1(p.loc)}% <span class="muted">(${n1(p.range[0])}–${n1(p.range[1])})</span></span></td>${p.tests.map(cell).join("")}</tr>`).join("")}</tbody>
+        </table></div>
+        <p class="note">${t("fm.nasa", { x: n1((preds.find((p) => p.material.id === "nomex") || preds[0]).loc), src: srcLink("ferkul2026") })}</p>
+      </section>`;
   }
   function drawRiskChart(a) {
     const sim = state.sim;
@@ -566,7 +654,8 @@
     const xs = logScale(0.5, 60, ml, W - mr), ys = linScale(0, yMax, H - mb, mt);
     const css = getComputedStyle(document.documentElement);
     const c = (n) => css.getPropertyValue(n).trim();
-    const pts = M.curve(a.material, sim.p);
+    const pts = M.curve(a.material, sim.p, 60, sim.g);
+    const bandPts = pts.map(([u]) => [u, ...M.band(a.material, u, sim.p, sim.g)]);
     let g = "";
     [0.5, 1, 2, 5, 10, 20, 50].forEach((u) => { g += `<g class="grid"><line x1="${xs(u)}" x2="${xs(u)}" y1="${mt}" y2="${H - mb}"/></g><text x="${xs(u)}" y="${H - mb + 16}" text-anchor="middle">${fmt(u)}</text>`; });
     for (let o = 0; o <= yMax; o += 10) g += `<g class="grid"><line x1="${ml}" x2="${W - mr}" y1="${ys(o)}" y2="${ys(o)}"/></g><text x="${ml - 6}" y="${ys(o) + 4}" text-anchor="end">${o}%</text>`;
@@ -574,6 +663,8 @@
     const clamp = (y) => Math.max(mt, Math.min(H - mb, y));
     const line = pts.map(([u, o], n) => `${n ? "L" : "M"}${xs(u).toFixed(1)},${clamp(ys(o)).toFixed(1)}`).join("");
     g += `<path d="${line} L${xs(60)},${mt} L${xs(0.5)},${mt} Z" fill="${c("--ember")}" fill-opacity="0.13"/>`;
+    const bandPath = bandPts.map(([u, lo], n) => `${n ? "L" : "M"}${xs(u).toFixed(1)},${clamp(ys(lo)).toFixed(1)}`).join("") + bandPts.slice().reverse().map(([u, , hi]) => `L${xs(u).toFixed(1)},${clamp(ys(hi)).toFixed(1)}`).join("") + "Z";
+    g += `<path d="${bandPath}" fill="${c("--ember")}" fill-opacity="0.16" stroke="none"><title>${esc(t("rk.bandTip"))}</title></path>`;
     g += `<path d="${line}" fill="none" stroke="${c("--ember")}" stroke-width="2.4"/>`;
     g += `<text x="${xs(0.7)}" y="${mt + 16}" style="fill:${c("--ember")}">${esc(t("rk.canSpread"))}</text><text x="${xs(0.7)}" y="${H - mb - 8}" style="fill:${c("--ok")}">${esc(t("rk.selfExt"))}</text>`;
     // O2 line
@@ -773,6 +864,20 @@
       if (!E.voice.canBrowserListen()) { const w = $("#v-wake"); w.disabled = true; w.closest("label").title = t("v.wakeUnsupported"); }
     });
   }
+  /* Offline app: service worker (http/https only), install button, live network status. */
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => { /* offline mode simply unavailable */ }); });
+  }
+  let installEvt = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; const b = $("#install-btn"); if (b) b.hidden = false; });
+  document.addEventListener("click", async (e) => {
+    if (!e.target.closest || !e.target.closest("#install-btn") || !installEvt) return;
+    installEvt.prompt();
+    try { await installEvt.userChoice; } catch (err) { /* dismissed */ }
+    installEvt = null; $("#install-btn").hidden = true;
+  });
+  window.addEventListener("online", () => updateEngine());
+  window.addEventListener("offline", () => updateEngine());
   async function updateEngine() {
     const on = await E.ai.checkOnline();
     const el = $("#engine");

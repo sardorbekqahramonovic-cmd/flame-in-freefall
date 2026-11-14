@@ -17,7 +17,7 @@ window.VULKAN.INSIGHTS = [
     rank: 2,
     title: "Exploration atmospheres turn 'non-flammable' fabrics into fuel",
     text: "Moon-base and rover atmospheres are planned at 30–34% O2 and 8.2–10.2 psia, a 40%+ increase in oxygen concentration over Earth air. Materials such as Nomex that do not burn in ISS air are predicted to spread flame at these levels, especially near the lowest-limit flow speeds.",
-    action: "Re-screen soft goods and crew clothing at 34% O2 / 56.5 kPa; prefer high-LOI materials (PTFE, Kapton) near ignition sources.",
+    action: "Re-screen soft goods and crew clothing at 34% O2 / 56.5 kPa with NASA's upward-burning test; near ignition sources prefer materials that pass it at cabin oxygen and pressure (PTFE does; Kapton film's NASA limit is only 26% O2 at 14.7 psia).",
     cites: ["SAFFIRE-IV-VI", "SoFIE", "BASS"],
     tags: ["prevention", "habitat"],
     why: "Directly sets the material list for Artemis habitats and rovers.",

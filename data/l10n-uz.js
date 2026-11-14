@@ -33,15 +33,17 @@ window.VULKAN.L10N.uz = {
   },
 
   mat: {
-    sibal: { label: "Paxta-shisha tolali mato (SIBAL)", note: "Saffire va BASS'ning etalon matosi; LOI paxta bo'yicha baholangan." },
-    paper: { label: "Qog'oz / yupqa tsellyuloza", note: "Salfetkalar, yorliqlar, nazorat varaqalari." },
-    pmma: { label: "Akril (PMMA), qalin", note: "Illyuminator va panel akrili; BASS, Saffire-II, SoFIE." },
-    pe: { label: "Polietilen plyonka (paketlar)", note: "Saqlash paketlari va o'ramlar." },
+    sibal: { label: "Paxta-shisha tolali mato (SIBAL)", note: "Saffire va BASS'ning etalon matosi; NASA MOC topilmadi, LOI paxta bo'yicha baholangan." },
+    paper: { label: "Qog'oz / yupqa tsellyuloza", note: "Salfetkalar, yorliqlar, nazorat varaqalari; NASA MOC topilmadi." },
+    pmma: { label: "Akril (PMMA), qalin", note: "Illyuminator va panel akrili; BASS, Saffire-II, SoFIE. Quyma akril uchun NASA MOC 14% (ekstruziya qilingan tayoqcha: 18–19%)." },
+    pe: { label: "Polietilen plyonka (paketlar)", note: "Saqlash paketlari va o'ramlar; NASA MOC topilmadi." },
+    pet: { label: "Poliefir plyonka (PET, Melinex 515)", note: "Yorliqlar, qopqoqlar, o'rash plyonkasi." },
+    psu: { label: "Polisulfon (Udel P1700)", note: "Korpus va panellar; NASA'ning ikki sinovi ham 29% bergan." },
     nomex: { label: "Nomex matosi (HT90-40)", note: "Ekipaj kiyimi, saqlash sumkalari; yuqori O₂'da Saffire sinovlarida yonadi." },
-    pc: { label: "Polikarbonat (Lexan)", note: "Dubulg'alar, qopqoqlar." },
-    silicone: { label: "Silikon rezina", note: "Zichlagichlar, qistirmalar; SAME tutun namunasi." },
-    kapton: { label: "Kapton poliimid plyonkasi", note: "Sim izolyatsiyasi; SAME tutun namunasi." },
-    ptfe: { label: "Teflon (PTFE)", note: "Sim izolyatsiyasi; o't olishi juda qiyin." },
+    pc: { label: "Polikarbonat (Lexan)", note: "Dubulg'alar, qopqoqlar. NASA: Lexan 6006 MOC 10,2 psia'da 30% dan past, bu LOI bilan mos." },
+    silicone: { label: "Silikon rezina", note: "Zichlagichlar, qistirmalar; SAME tutun namunasi. 1 mm list uchun NASA MOC 22% (qalinroq turlari 24–29%)." },
+    kapton: { label: "Kapton poliimid plyonkasi", note: "Sim izolyatsiyasi; SAME tutun namunasi. NASA MOC 26%, LOI'si 37% dan ancha past." },
+    ptfe: { label: "Teflon (PTFE)", note: "Sim izolyatsiyasi; o't olishi juda qiyin. MOC NASA'ning yuqoriga yonish indeksi (49%) minus 3 punkt deb baholangan." },
   },
 
   inv: {
@@ -370,7 +372,7 @@ window.VULKAN.L10N.uz = {
     2: {
       title: "Kosmosni o'zlashtirish atmosferalari “yonmaydigan” matolarni yoqilg'iga aylantiradi",
       text: "Oy bazasi va rover atmosferalari 8,2–10,2 psia'da 30–34% O₂ qilib rejalashtirilgan, bu Yer havosidan 40% dan ko'proq yuqori kislorod konsentratsiyasi. XKS havosida yonmaydigan Nomex kabi materiallar bu darajalarda, ayniqsa eng past chegaraga mos oqim tezliklarida, alanga tarqatishi kutiladi.",
-      action: "Yumshoq buyumlar va ekipaj kiyimini 34% O₂ / 56,5 kPa'da qayta sinash; o't oldirish manbalari yonida yuqori LOI'li materiallardan (PTFE, Kapton) foydalanish.",
+      action: "Yumshoq buyumlar va ekipaj kiyimini 34% O₂ / 56,5 kPa'da NASA'ning pastdan yuqoriga yonish sinovi bilan qayta tekshirish; o't oldirish manbalari yonida kabina kislorodi va bosimida bu sinovdan o'tadigan materiallarni tanlash (PTFE o'tadi; Kapton plyonkasining NASA chegarasi 14,7 psia'da atigi 26% O₂).",
       why: "Artemis yashash modullari va roverlari uchun materiallar ro'yxatini bevosita belgilaydi.",
     },
     3: {

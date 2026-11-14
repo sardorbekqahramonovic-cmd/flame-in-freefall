@@ -26,6 +26,14 @@ const SRC = {
   flare: { label: "NASA Glenn: Flammability Limits at Reduced-g Experiment (FLARE)", url: "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/flammability-limits-at-reduced-g-experiment-flare/" },
   sameDoi: { label: "Meyer et al. 2018, Fire Safety Journal, doi:10.1016/j.firesaf.2018.04.004", url: "https://doi.org/10.1016/j.firesaf.2018.04.004" },
   challenge: { label: "NASA Space Apps 2026: Flame in Freefall challenge", url: "https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/" },
+  hirsch2010: { label: "Hirsch et al., Pressure Flammability Thresholds of Selected Aerospace Materials (NASA White Sands, 2010)", url: "https://ntrs.nasa.gov/citations/20100015582" },
+  hirsch2011: { label: "Hirsch et al., Selected Parametric Effects on Materials Flammability Limits (NASA White Sands, 2011)", url: "https://ntrs.nasa.gov/citations/20110008636" },
+  hirsch2007: { label: "Hirsch et al., Oxygen Concentration Flammability Thresholds of Aerospace Materials for Constellation (NASA, 2007)", url: "https://ntrs.nasa.gov/citations/20070018178" },
+  bass2013: { label: "Ferkul et al., Thickness and Fuel Preheating Effects on Material Flammability in Microgravity from BASS (2013)", url: "https://ntrs.nasa.gov/citations/20140011099" },
+  bass2014: { label: "Ferkul et al., Combustion of Solids in Microgravity: Results from the BASS-II Experiment (2014)", url: "https://ntrs.nasa.gov/citations/20160000593" },
+  zhao2015: { label: "Zhao, T'ien, Ferkul & Olson, Concurrent flame spread and extinction over fabric in microgravity flow (2015)", url: "https://ntrs.nasa.gov/citations/20150008962" },
+  bass2019: { label: "Olson et al., Flammability Limits from BASS-II Testing in Microgravity Compared to Normal Gravity Limits (ICES-2019-509)", url: "https://ttu-ir.tdl.org/items/1922ad9f-ef4c-4f52-96a4-980c23debe5e" },
+  ferkul2026: { label: "Ferkul, Material Flammability at Lunar and Martian Gravity: FM2 (LPSC 2026)", url: "https://ntrs.nasa.gov/citations/20260001966" },
 };
 window.VULKAN.SRC = SRC;
 
@@ -589,18 +597,22 @@ window.VULKAN.REF_ATMOS = [
   { id: "apollo1", label: "Apollo 1 pad test 16.7 psia", o2: 100, p: 115, incident: true, dx: 11, dy: 4, anchor: "start" },
 ];
 
-/* Materials for the risk explorer. loi = typical Limiting Oxygen Index (ASTM D2863, % O2)
-   used as the normal-gravity reference. thin=true means thermally thin. */
+/* Materials for the risk explorer. moc = NASA-STD-6001 Test 1 Maximum Oxygen Concentration
+   (upward burning, normal gravity) at the pressure NASA measured it; est = estimated from a NASA
+   number, see note. loi = typical Limiting Oxygen Index (ASTM D2863), used only when NASA has
+   published no MOC (flagged as unverified). thin=true means thermally thin. */
 window.VULKAN.MATERIALS = [
-  { id: "sibal", label: "Cotton-fiberglass fabric (SIBAL)", loi: 18.5, thin: true, note: "Saffire / BASS reference fabric; LOI estimated from cotton." },
-  { id: "paper", label: "Paper / thin cellulose", loi: 18.0, thin: true, note: "Wipes, labels, checklists." },
-  { id: "pmma", label: "Acrylic (PMMA), thick", loi: 17.3, thin: false, note: "Window and panel acrylic; BASS, Saffire-II, SoFIE." },
-  { id: "pe", label: "Polyethylene film (bags)", loi: 17.4, thin: true, note: "Stowage bags and wraps." },
-  { id: "nomex", label: "Nomex fabric (HT90-40)", loi: 28.0, thin: true, note: "Crew clothing, stowage bags; burns in Saffire-class tests at high O2." },
-  { id: "pc", label: "Polycarbonate (Lexan)", loi: 26.0, thin: false, note: "Helmets, covers." },
-  { id: "silicone", label: "Silicone rubber", loi: 30.0, thin: false, note: "Seals, gaskets; SAME smoke sample." },
-  { id: "kapton", label: "Kapton polyimide film", loi: 37.0, thin: true, note: "Wire insulation; SAME smoke sample." },
-  { id: "ptfe", label: "Teflon (PTFE)", loi: 95.0, thin: false, note: "Wire insulation; very hard to ignite." },
+  { id: "sibal", label: "Cotton-fiberglass fabric (SIBAL)", loi: 18.5, thin: true, note: "Saffire / BASS reference fabric; no NASA MOC found, LOI estimated from cotton." },
+  { id: "paper", label: "Paper / thin cellulose", loi: 18.0, thin: true, note: "Wipes, labels, checklists; no NASA MOC found." },
+  { id: "pmma", label: "Acrylic (PMMA), thick", loi: 17.3, moc: { o2: 14, psia: 14.7, src: "hirsch2011" }, thin: false, note: "Window and panel acrylic; BASS, Saffire-II, SoFIE. NASA MOC 14% for cast acrylic (extruded rod: 18–19%)." },
+  { id: "pe", label: "Polyethylene film (bags)", loi: 17.4, thin: true, note: "Stowage bags and wraps; no NASA MOC found." },
+  { id: "pet", label: "Polyester film (PET, Melinex 515)", moc: { o2: 20, psia: 10.2, src: "hirsch2010" }, thin: true, note: "Labels, covers, packaging film." },
+  { id: "nomex", label: "Nomex fabric (HT90-40)", loi: 28.0, moc: { o2: 25, psia: 10.2, src: "hirsch2010" }, thin: true, note: "Crew clothing, stowage bags; burns in Saffire-class tests at high O2." },
+  { id: "pc", label: "Polycarbonate (Lexan)", loi: 26.0, thin: false, note: "Helmets, covers. NASA found Lexan 6006 MOC below 30% at 10.2 psia, consistent with this LOI." },
+  { id: "psu", label: "Polysulfone (Udel P1700)", moc: { o2: 29, psia: 10.2, src: "hirsch2010" }, thin: false, note: "Housings and panels; two NASA tests both gave 29%." },
+  { id: "silicone", label: "Silicone rubber", loi: 30.0, moc: { o2: 22, psia: 14.7, src: "hirsch2011" }, thin: false, note: "Seals, gaskets; SAME smoke sample. NASA MOC 22% for a 1 mm sheet (thicker grades 24–29%)." },
+  { id: "kapton", label: "Kapton polyimide film", loi: 37.0, moc: { o2: 26, psia: 14.7, src: "hirsch2011" }, thin: true, note: "Wire insulation; SAME smoke sample. NASA MOC 26%, far below its 37% LOI." },
+  { id: "ptfe", label: "Teflon (PTFE)", loi: 95.0, moc: { o2: 46, psia: 14.7, est: true, src: "hirsch2011" }, thin: false, note: "Wire insulation; very hard to ignite. MOC estimated as NASA's upward index (49%) minus 3 points." },
 ];
 
 window.VULKAN.INCIDENTS = [
