@@ -40,7 +40,7 @@ export default async function handler(req, res) {
       if (!buf.length) return res.status(400).json({ error: "Missing audio" });
       if (buf.length > MAX_AUDIO_BYTES) return res.status(413).json({ error: "Recording too long" });
       const mime = /^audio\/[\w.+-]+/.exec(String(body.mime || ""))?.[0] || "audio/webm";
-      const ext = mime.includes("mp4") || mime.includes("m4a") ? "m4a" : mime.includes("ogg") ? "ogg" : mime.includes("wav") ? "wav" : "webm";
+      const ext = mime.includes("mp4") || mime.includes("m4a") ? "m4a" : mime.includes("mpeg") || mime.includes("mp3") ? "mp3" : mime.includes("ogg") ? "ogg" : mime.includes("wav") ? "wav" : "webm";
       const form = new FormData();
       form.append("file", new Blob([buf], { type: mime }), `speech.${ext}`);
       form.append("model", STT_MODEL());
