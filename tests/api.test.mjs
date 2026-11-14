@@ -51,7 +51,7 @@ res = fakeRes();
 await voice(req("POST", { action: "stt", audio: Buffer.from("fake-audio").toString("base64"), mime: "audio/webm;codecs=opus", lang: "ru" }), res);
 assert.deepEqual([res.code, res.body.text], [200, "Is Nomex flammable?"]);
 const form = calls.at(-1).init.body;
-assert.equal(form.get("model"), "gpt-4o-mini-transcribe"); assert.equal(form.get("language"), "ru");
+assert.equal(form.get("model"), "gpt-4o-mini-transcribe-2025-03-20"); assert.equal(form.get("language"), "ru");
 res = fakeRes(); await voice(req("POST", { action: "stt", audio: Buffer.alloc(1_300_000).toString("base64"), lang: "en" }), res);
 assert.equal(res.code, 413);
 
@@ -59,7 +59,7 @@ assert.equal(res.code, 413);
 res = fakeRes(); await voice(req("POST", { action: "tts", text: "x".repeat(2000), lang: "en" }), res);
 assert.equal(res.code, 200); assert.equal(res.headers["content-type"], "audio/mpeg");
 const tts = JSON.parse(calls.at(-1).init.body);
-assert.equal(tts.model, "gpt-4o-mini-tts"); assert.ok(tts.input.length <= 500); assert.ok(tts.instructions);
+assert.equal(tts.model, "gpt-4o-mini-tts-2025-03-20"); assert.ok(tts.input.length <= 500); assert.ok(tts.instructions);
 
 // rate limit per IP
 let limited = false;

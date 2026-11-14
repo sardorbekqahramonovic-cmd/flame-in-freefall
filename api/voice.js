@@ -5,8 +5,9 @@
 // Needs OPENAI_API_KEY. Without it the browser falls back to the Web Speech API.
 import { pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openaiError } from "./_shared.js";
 
-const STT_MODEL = () => process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe";
-const TTS_MODEL = () => process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
+// Dated snapshots: OpenAI project model allowlists match exact names, and these are the ones usually listed.
+const STT_MODEL = () => process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe-2025-03-20";
+const TTS_MODEL = () => process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts-2025-03-20";
 const TTS_VOICE = () => process.env.OPENAI_TTS_VOICE || "coral";
 const MAX_AUDIO_BYTES = 1_200_000; // about 20 s of compressed speech
 const MAX_TTS_CHARS = 500;
