@@ -10,6 +10,7 @@ require("../data/l10n-uz.js");
 require("../i18n.js");
 require("../model.js");
 require("../ai.js");
+require("../voice.js");
 const E = window.EMBER, M = E.model;
 E.setLang("en");
 
@@ -95,3 +96,29 @@ for (const [lang, fire, smoke, stop] of [["en", "Fire!", "smoke", "stop"], ["ru"
 }
 E.setLang("en");
 console.log("All EMBER model and language checks passed.");
+
+// Uzbek speech text: digits, units and acronyms are read as Uzbek words
+{
+  const sp = (x) => E.voice.speechText(x, "uz");
+  assert.equal(E.voice.uzInt(2016), "ikki ming o'n olti");
+  assert.equal(sp("28,1%"), "yigirma sakkiz butun oʻndan bir foiz");
+  assert.equal(sp("56,5 kPa'da"), "ellik olti butun oʻndan besh kilopaskalda");
+  assert.equal(sp("34% O₂"), "oʻttiz toʻrt foiz kislorod");
+  assert.equal(sp("2016-yil"), "ikki ming oʻn oltinchi yil");
+  assert.equal(sp("Saffire I–III"), "Saffire birdan uchgacha");
+  assert.equal(sp("ISS'da LOI'si"), "Xalqaro kosmik stansiyada kislorod indeksi");
+  assert.equal(sp("1 mkm dan past"), "bir mikrometrdan past");
+  assert.equal(sp("ma'lumot"), "maʼlumot");
+  assert.ok(!/\d/.test(sp(E.ai.emergency("yong'in").spoken)));
+  assert.equal(E.voice.speechText("21% O₂", "en"), "21% O₂"); // other languages unchanged
+  E.setLang("uz");
+  for (const q of E.suggestions()) {
+    const r = await E.ai.ask(q, { label: "ISS", o2: 21, p: 101.3, g: 0 }, [], {});
+    const said = sp(r.spoken);
+    assert.ok(!/\d|%|₂/.test(said), `digits left in Uzbek speech: ${said}`);
+    assert.ok(said.length <= 700);
+  }
+  E.setLang("en");
+}
+console.log("Uzbek speech text checks passed.");
+

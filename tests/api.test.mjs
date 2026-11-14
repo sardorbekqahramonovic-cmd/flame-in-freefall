@@ -52,6 +52,11 @@ await voice(req("POST", { action: "stt", audio: Buffer.from("fake-audio").toStri
 assert.deepEqual([res.code, res.body.text], [200, "Is Nomex flammable?"]);
 const form = calls.at(-1).init.body;
 assert.equal(form.get("model"), "gpt-4o-mini-transcribe-2025-03-20"); assert.equal(form.get("language"), "ru");
+// OpenAI rejects language "uz": it must be left out and named in the prompt instead
+res = fakeRes(); await voice(req("POST", { action: "stt", audio: Buffer.from("fake-audio").toString("base64"), mime: "audio/mpeg", lang: "uz" }), res);
+const formUz = calls.at(-1).init.body;
+assert.equal(res.code, 200); assert.equal(formUz.get("language"), null); assert.match(formUz.get("prompt"), /Uzbek/);
+assert.match(formUz.get("file").name, /\.mp3$/);
 res = fakeRes(); await voice(req("POST", { action: "stt", audio: Buffer.alloc(1_300_000).toString("base64"), lang: "en" }), res);
 assert.equal(res.code, 413);
 
@@ -59,7 +64,7 @@ assert.equal(res.code, 413);
 res = fakeRes(); await voice(req("POST", { action: "tts", text: "x".repeat(2000), lang: "en" }), res);
 assert.equal(res.code, 200); assert.equal(res.headers["content-type"], "audio/mpeg");
 const tts = JSON.parse(calls.at(-1).init.body);
-assert.equal(tts.model, "gpt-4o-mini-tts-2025-03-20"); assert.ok(tts.input.length <= 500); assert.ok(tts.instructions);
+assert.equal(tts.model, "gpt-4o-mini-tts-2025-03-20"); assert.ok(tts.input.length <= 700); assert.ok(tts.instructions);
 
 // rate limit per IP
 let limited = false;

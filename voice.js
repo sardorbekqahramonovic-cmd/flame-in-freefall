@@ -140,8 +140,8 @@
 
   function browserVoice(lang) {
     if (!window.speechSynthesis) return null;
-    const voices = window.speechSynthesis.getVoices();
-    return voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(lang)) || null;
+    const voices = window.speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith(lang));
+    return voices.find((v) => /natural|online|neural/i.test(v.name)) || voices[0] || null;
   }
   // voices load asynchronously in some browsers
   const voicesReady = () => new Promise((resolve) => {
@@ -151,13 +151,84 @@
     setTimeout(done, 1200);
   });
 
+  /* ---------- Uzbek text for speech ----------
+   * Voices read digits, units and acronyms in English unless they are written out,
+   * so Uzbek answers are turned into words first ("28,1%" -> "yigirma sakkiz butun o'ndan bir foiz"). */
+  const UZ1 = ["nol", "bir", "ikki", "uch", "to'rt", "besh", "olti", "yetti", "sakkiz", "to'qqiz"];
+  const UZ10 = ["", "o'n", "yigirma", "o'ttiz", "qirq", "ellik", "oltmish", "yetmish", "sakson", "to'qson"];
+  function uzInt(n) {
+    if (!Number.isFinite(n) || n > 999999999) return String(n);
+    if (n === 0) return "nol";
+    const chunk = (x) => {
+      const h = Math.floor(x / 100), t = Math.floor((x % 100) / 10), u = x % 10, w = [];
+      if (h) w.push(h === 1 ? "yuz" : UZ1[h] + " yuz");
+      if (t) w.push(UZ10[t]);
+      if (u) w.push(UZ1[u]);
+      return w.join(" ");
+    };
+    const m = Math.floor(n / 1e6), k = Math.floor((n % 1e6) / 1000), r = n % 1000, out = [];
+    if (m) out.push(chunk(m) + " million");
+    if (k) out.push(k === 1 ? "ming" : chunk(k) + " ming");
+    if (r) out.push(chunk(r));
+    return out.join(" ");
+  }
+  const uzOrdinal = (n) => { const w = uzInt(n); return w + (/[aeiou]$/.test(w) ? "nchi" : "inchi"); };
+  function uzNumber(int, frac) {
+    let w = uzInt(Number(int));
+    if (frac && Number(frac) > 0) w += " butun " + (frac.length === 1 ? "o'ndan " : frac.length === 2 ? "yuzdan " : "mingdan ") + uzInt(Number(frac));
+    return w;
+  }
+  const ROMAN = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
+  const UZ_UNITS = [
+    ["cm/s", "santimetr sekundiga"], ["sm/s", "santimetr sekundiga"], ["m/s", "metr sekundiga"],
+    ["kPa", "kilopaskal"], ["psia", "psi"], ["psi", "psi"], ["mkm", "mikrometr"], ["µm", "mikrometr"],
+    ["mm", "millimetr"], ["kg", "kilogramm"], ["kW", "kilovatt"], ["W", "vatt"], ["m", "metr"], ["g", "ge"], ["s", "soniya"],
+  ];
+  const ACRONYMS = [["ISS", "Xalqaro kosmik stansiya", ""], ["LOI", "kislorod indeks", "i"], ["NASA-STD-6001", "NASA standarti 6001", ""]];
+  function uzSpeech(text) {
+    let t = String(text || "");
+    t = t.replace(/\s*\([^()]*\b[A-Za-z]+\d[\w-]*[^()]*\)/g, ""); // product codes like (HT90-40)
+    t = t.replace(/\s*[()]\s*/g, ", ").replace(/\s+\/\s+/g, ", ").replace(/\s*×\s*/g, " ga ");
+    t = t.replace(/CO₂|CO2/g, "karbonat angidrid").replace(/O₂|\bO2\b/g, "kislorod");
+    // a suffix written after an acronym's letter name (LOI'si) loses its buffer consonant after a spelled-out word
+    const attach = (word, suf) => (suf && /[^aeiouʻ']$/.test(word) && /^s[aeiou]/.test(suf) ? word + suf.slice(1) : word + (suf || ""));
+    for (const [a, word, bare] of ACRONYMS) {
+      t = t.replace(new RegExp(a + "(?:['’ʼ](\\p{Ll}+))?(?![\\p{L}\\d])", "gu"), (m, suf) => attach(word, suf || bare));
+    }
+    t = t.replace(/\b([A-Z][A-Z0-9-]+|Saffire|Nomex|Kapton|Artemis)['’ʼ](\p{Ll}+)/gu, "$1$2"); // BASS'da -> BASSda
+    t = t.replace(/(\p{L}{2,})-(I{1,3}|IV|VI?)(?![\p{L}\d])/gu, (m, a, r) => a + " " + uzInt(ROMAN[r])); // BASS-II, Saffire-I
+    t = t.replace(/(?<![\p{L}\d])(I{1,3}|IV|VI?)\s*[–-]\s*(I{1,3}|IV|VI?)(?![\p{L}])/gu, (m, a, b) => uzInt(ROMAN[a]) + "dan " + uzInt(ROMAN[b]) + "gacha");
+    t = t.replace(/(?<![\p{L}\d])(I{1,3}|IV|VI?)(?![\p{L}\d])/gu, (m) => uzInt(ROMAN[m]));
+    t = t.replace(/\b([A-Z]{2,})(\d)\b/g, (m, a, d) => a + " " + uzInt(Number(d))); // FM2
+    t = t.replace(/\s*%/g, " foiz");
+    for (const [u, word] of UZ_UNITS) {
+      t = t.replace(new RegExp("(\\d)\\s*" + u.replace(/\//g, "\\/") + "(?:['’ʼ](\\p{Ll}+)|\\s+(dan|da|ga|gacha|dagi)(?![\\p{L}]))?(?![\\p{L}\\d/])", "gu"), (m, d, s1, s2) => d + " " + attach(word, s1 || s2));
+    }
+    t = t.replace(/(\p{L})\/(\p{L})/gu, "$1 va $2"); // FM2/FLARE
+    t = t.replace(/(?<![\p{L}\d])(\d+)-(\p{L}+)/gu, (m, n, w) => uzOrdinal(Number(n)) + " " + w); // 2016-yil, 1-sinov
+    t = t.replace(/(?<![\p{L}\d])(\d+)(?:,(\d+))?(?!\d)/gu, (m, i, f) => uzNumber(i, f));
+    t = t.replace(/\s*[–—]\s*/g, ", ");
+    // official Uzbek letters: oʻ gʻ (U+02BB) and the tutuq belgisi ʼ (U+02BC)
+    t = t.replace(/([oOgG])['’‘`ʻ]/g, "$1ʻ").replace(/(\p{L})['’‘`](\p{L})/gu, "$1ʼ$2");
+    return t.replace(/\s{2,}/g, " ").replace(/\s+([.,;:!?])/g, "$1").replace(/,([.,;:!?])/g, "$1").replace(/^[,\s]+|[,\s]+$/g, "").trim();
+  }
+  const speechText = (text, lang) => (lang === "uz" ? uzSpeech(text) : String(text || "")).trim().slice(0, 700);
+
+  // A native voice installed in the browser (Edge has Uzbek Microsoft voices) beats an English-trained one.
+  async function nativeVoice(lang) {
+    if (lang !== "uz" || !window.speechSynthesis) return null;
+    await voicesReady();
+    return browserVoice(lang);
+  }
+
   /* Speak text. Resolves when finished; resolves { spoken:false, reason } when it cannot. */
   async function speak(text, lang) {
     stopSpeaking();
-    text = String(text || "").trim().slice(0, 500);
+    text = speechText(text, lang);
     if (!text) return { spoken: false, reason: "empty" };
     const st = await status();
-    if (st && st.tts) {
+    const native = await nativeVoice(lang);
+    if (st && st.tts && !native) {
       try {
         const key = lang + "|" + text;
         let url = ttsCache.get(key);
@@ -178,7 +249,7 @@
     }
     if (!window.speechSynthesis) return { spoken: false, reason: "unsupported" };
     await voicesReady();
-    const v = browserVoice(lang);
+    const v = native || browserVoice(lang);
     if (!v) return { spoken: false, reason: "novoice" };
     const u = new SpeechSynthesisUtterance(text);
     u.voice = v; u.lang = v.lang; u.rate = 1;
@@ -232,5 +303,6 @@
     status, listen, stopListening, isListening, speak, stopSpeaking,
     isSpeaking: () => speaking, onSpeaking: (f) => listeners.add(f),
     canBrowserListen, canRecord, startWake, pauseWake, resumeWake, stopWake, wakeDenied, WAKE_RX,
+    speechText, uzInt,
   };
 })();

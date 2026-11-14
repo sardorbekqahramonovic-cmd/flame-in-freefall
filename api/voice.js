@@ -9,16 +9,24 @@ import { pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openaiError }
 const STT_MODEL = () => process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe-2025-03-20";
 const TTS_MODEL = () => process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts-2025-03-20";
 const TTS_VOICE = () => process.env.OPENAI_TTS_VOICE || "coral";
+// A listener may try another built-in voice; anything else falls back to the default.
+const VOICES = new Set(["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"]);
 const MAX_AUDIO_BYTES = 1_200_000; // about 20 s of compressed speech
-const MAX_TTS_CHARS = 500;
+const MAX_TTS_CHARS = 700; // Uzbek numbers are written out in words, which makes text longer
 
 // Domain words help the recogniser spell names it would otherwise guess.
 const VOCAB = "EMBER, NASA, ISS, BASS, Saffire, SoFIE, FLEX, CFI, ACME, SAME, DAFT, SPICE, SLICE, SSCE, SOFBALL, FM2, FLARE, Nomex, Kapton, PMMA, PTFE, SIBAL, psi, kPa, CO2, O2, Artemis.";
 
+const STT_HINT = {
+  en: "English speech about spacecraft fire safety.",
+  ru: "Русская речь о пожарной безопасности на космических кораблях.",
+  uz: "The speech is in Uzbek (Latin script), about spacecraft fire safety. Oʻzbek tilida: yongʻin, tutun, kislorod, oʻt oʻchirgich.",
+};
+
 const VOICE_STYLE = {
   en: "Calm, clear and confident, like a spacecraft safety officer briefing a crew. Moderate pace.",
   ru: "Спокойно, чётко и уверенно, как офицер безопасности корабля на инструктаже экипажа. Умеренный темп. Говори по-русски.",
-  uz: "Xotirjam, aniq va ishonchli, kema xavfsizlik ofitseri ekipajga yo'l-yo'riq berayotgandek. O'rtacha sur'at. O'zbek tilida gapir.",
+  uz: "Speak Uzbek (Latin script) like a native speaker from Tashkent, with no English or Russian accent. Read every word as Uzbek: q is a deep uvular k, gʻ is a voiced uvular fricative like a French r, x is a rasping sound like German ch in Bach, h is soft, oʻ is a rounded vowel between o and u, and ʼ is a short glottal stop. Stress is usually on the last syllable. Calm, clear and confident, like a spacecraft safety officer briefing a crew. Moderate pace.",
 };
 
 export const config = { api: { bodyParser: { sizeLimit: "2mb" } } };
@@ -44,8 +52,9 @@ export default async function handler(req, res) {
       const form = new FormData();
       form.append("file", new Blob([buf], { type: mime }), `speech.${ext}`);
       form.append("model", STT_MODEL());
-      form.append("language", lang);
-      form.append("prompt", VOCAB);
+      // OpenAI rejects the language code "uz"; naming the language in the prompt works instead.
+      if (lang !== "uz") form.append("language", lang);
+      form.append("prompt", `${STT_HINT[lang]} ${VOCAB}`);
       form.append("response_format", "json");
       const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
         method: "POST",
@@ -62,7 +71,7 @@ export default async function handler(req, res) {
       if (!text) return res.status(400).json({ error: "Missing text" });
       const r = await openaiJSON("audio/speech", {
         model: TTS_MODEL(),
-        voice: TTS_VOICE(),
+        voice: VOICES.has(body.voice) ? body.voice : TTS_VOICE(),
         input: text,
         instructions: VOICE_STYLE[lang],
         response_format: "mp3",
