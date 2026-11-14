@@ -1,9 +1,9 @@
-/* SARDOR content in Russian. Missing fields fall back to English (see i18n.js).
+/* VULKAN content in Russian. Missing fields fall back to English (see i18n.js).
  * Investigation names, ids, numbers and NASA source titles are not translated. */
-window.SARDOR = window.SARDOR || {};
-window.SARDOR.L10N = window.SARDOR.L10N || {};
+window.VULKAN = window.VULKAN || {};
+window.VULKAN.L10N = window.VULKAN.L10N || {};
 
-window.SARDOR.L10N.ru = {
+window.VULKAN.L10N.ru = {
   cat: {
     solid: "Твёрдые материалы",
     droplet: "Капли жидкости",

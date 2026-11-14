@@ -1,13 +1,13 @@
 /*
- * SARDOR voice: speech in, speech out.
+ * VULKAN voice: speech in, speech out.
  * - With OPENAI_API_KEY on the server (/api/voice): recorded speech goes to OpenAI speech
  *   recognition, answers are read with an OpenAI voice. Best quality, works for Uzbek too.
  * - Otherwise: the browser's Web Speech API (SpeechRecognition + speechSynthesis), free.
- * - "Hey SARDOR" wake word always uses the browser recogniser, so listening for it costs nothing.
+ * - "Hey VULKAN" wake word always uses the browser recogniser, so listening for it costs nothing.
  */
 (function () {
-  const E = window.SARDOR;
-  const API = (window.SARDOR_CONFIG && window.SARDOR_CONFIG.voiceUrl) || "api/voice";
+  const E = window.VULKAN;
+  const API = (window.VULKAN_CONFIG && window.VULKAN_CONFIG.voiceUrl) || "api/voice";
   const BCP = { en: "en-US", ru: "ru-RU", uz: "uz-UZ" };
   const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
   let server = null; // null = unknown, false, or { stt, tts }
@@ -214,7 +214,7 @@
     t = t.replace(/([oOgG])['’‘`ʻ]/g, "$1ʻ").replace(/(\p{L})['’‘`](\p{L})/gu, "$1ʼ$2");
     return t.replace(/\s{2,}/g, " ").replace(/\s+([.,;:!?])/g, "$1").replace(/,([.,;:!?])/g, "$1").replace(/^[,\s]+|[,\s]+$/g, "").trim();
   }
-  const speechText = (text, lang) => (lang === "uz" ? uzSpeech(text) : String(text || "")).replace(/\bSARDOR\b/g, "Sardor").trim().slice(0, 700);
+  const speechText = (text, lang) => { const t = String(text || "").replace(/\bVULKAN\b/g, "Vulkan"); return (lang === "uz" ? uzSpeech(t) : t).trim().slice(0, 700); };
 
   // A native voice installed in the browser (Edge has Uzbek Microsoft voices) beats an English-trained one.
   async function nativeVoice(lang) {
@@ -261,11 +261,11 @@
     return { spoken: true };
   }
 
-  /* ---------- "Hey SARDOR" wake word (browser recogniser, free) ----------
-   * Sardor is a common Uzbek name, so the Uzbek and Russian recognisers spell it reliably; English ones
-   * may write "Sardar" or "Sarder". Every alternative the recogniser offers is checked, and a watchdog
+  /* ---------- "Hey VULKAN" wake word (browser recogniser, free) ----------
+   * Vulkan ("volcano") is an everyday word in Uzbek and Russian. Uzbek recognisers may write the literary
+   * form "vulqon", Russian ones "вулкан", English ones "Vulcan" or "volkan"; all are accepted. Every alternative the recogniser offers is checked, and a watchdog
    * restarts listening if Chrome drops it. */
-  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:s[ae]rd[aoe]r|sardo|сард[оа]р)(?:ga|jon|bek|га|жон)?(?![\p{L}\d])[\s,.!?]*/iu;
+  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:[vw][uo]l[kq][ao]n|vulcan|вулкан)(?:ga|га)?(?![\p{L}\d])[\s,.!?]*/iu;
   let wake = null; // { rec, live, paused, on, timer, begin, drop }
 
   /* startWake(lang, onWake(rest), onHeard(text), onStatus({ live, lang, interim, error }))

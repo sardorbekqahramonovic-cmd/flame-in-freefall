@@ -1,4 +1,4 @@
-// SARDOR voice endpoint (Vercel serverless function, Node 18+), OpenAI audio models.
+// VULKAN voice endpoint (Vercel serverless function, Node 18+), OpenAI audio models.
 //   GET                               -> { stt, tts } availability
 //   POST { action:"stt", audio, mime, lang } -> { text }   (audio = base64, max ~20 s)
 //   POST { action:"tts", text, lang }        -> audio/mpeg (text capped at 500 characters)
@@ -16,7 +16,7 @@ const MAX_AUDIO_BYTES = 1_200_000; // about 20 s of compressed speech
 const MAX_TTS_CHARS = 700; // Uzbek numbers are written out in words, which makes text longer
 
 // Domain words help the recogniser spell names it would otherwise guess.
-const VOCAB = "SARDOR, NASA, ISS, BASS, Saffire, SoFIE, FLEX, CFI, ACME, SAME, DAFT, SPICE, SLICE, SSCE, SOFBALL, FM2, FLARE, Nomex, Kapton, PMMA, PTFE, SIBAL, psi, kPa, CO2, O2, Artemis.";
+const VOCAB = "VULKAN, NASA, ISS, BASS, Saffire, SoFIE, FLEX, CFI, ACME, SAME, DAFT, SPICE, SLICE, SSCE, SOFBALL, FM2, FLARE, Nomex, Kapton, PMMA, PTFE, SIBAL, psi, kPa, CO2, O2, Artemis.";
 
 const STT_HINT = {
   en: "English speech about spacecraft fire safety.",

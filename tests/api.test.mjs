@@ -31,7 +31,7 @@ function fakeRes() {
   r.setHeader = (k, v) => { r.headers[k.toLowerCase()] = v; };
   return r;
 }
-const req = (method, body, headers = {}) => ({ method, body, headers: { host: "sardor.test", ...headers }, socket: { remoteAddress: "1.2.3.4" } });
+const req = (method, body, headers = {}) => ({ method, body, headers: { host: "vulkan.test", ...headers }, socket: { remoteAddress: "1.2.3.4" } });
 
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.OPENAI_API_KEY;
@@ -123,4 +123,4 @@ let limited = false;
 for (let i = 0; i < 25; i++) { res = fakeRes(); await voice(req("POST", { action: "tts", text: "hi", lang: "en" }, {}), res); if (res.code === 429) limited = true; }
 assert.ok(limited, "rate limit");
 
-console.log("All SARDOR API checks passed.");
+console.log("All VULKAN API checks passed.");

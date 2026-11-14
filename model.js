@@ -1,9 +1,9 @@
 /*
- * SARDOR reasoning core: flammability model, mission-relevance ranking and
+ * VULKAN reasoning core: flammability model, mission-relevance ranking and
  * retrieval index. Pure functions, no DOM. Works offline.
  */
 (function () {
-  const E = window.SARDOR;
+  const E = window.VULKAN;
   const t = (k, v) => (E.t ? E.t(k, v) : k);
   const G_EARTH_BUOYANT_FLOW = 30; // cm/s, typical buoyancy-induced flow at a burning surface in 1 g
 

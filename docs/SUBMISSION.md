@@ -1,4 +1,4 @@
-# SARDOR: Space Apps 2026 project page text (English)
+# VULKAN: Space Apps 2026 project page text (English)
 
 Paste each section into the field with the same name on the Project Submission page. Fields are in the order the form shows them. Before you press **Submit for Judging**:
 
@@ -10,11 +10,11 @@ Paste each section into the field with the same name on the Project Submission p
 
 ## Project Name
 
-SARDOR: Safety Assistant for Risk and Data from Orbital Research
+VULKAN: Fire-Safety Insights from NASA Microgravity Combustion Data
 
 ## High-Level Project Summary
 
-SARDOR is an AI-powered fire-safety assistant that turns decades of NASA microgravity combustion experiments into ranked, cited answers for Moon and Mars missions. We curated 19 NASA investigations, from Shuttle-era flame balls to the spacecraft-scale Saffire fires, into one searchable atlas. Users pick a mission (ISS, lunar habitat, rover, Mars habitat, spacesuit), and SARDOR then does four things:
+VULKAN is an AI-powered fire-safety assistant that turns decades of NASA microgravity combustion experiments into ranked, cited answers for Moon and Mars missions. We curated 19 NASA investigations, from Shuttle-era flame balls to the spacecraft-scale Saffire fires, into one searchable atlas. Users pick a mission (ISS, lunar habitat, rover, Mars habitat, spacesuit), and VULKAN then does four things:
 
 - ranks the evidence for that atmosphere and gravity
 - maps where flight data is missing
@@ -25,9 +25,9 @@ This matters because Artemis habitats will run at higher oxygen and lower pressu
 
 ## Link to Project Demo
 
-https://flame-in-freefall-eight.vercel.app/docs/SARDOR-demo.pdf
+https://flame-in-freefall-eight.vercel.app/docs/VULKAN-demo.pdf
 
-(7-slide deck, English. The same file is in the repository: https://github.com/sardorbekqahramonovic-cmd/flame-in-freefall/blob/main/docs/SARDOR-demo.pdf)
+(7-slide deck, English. The same file is in the repository: https://github.com/sardorbekqahramonovic-cmd/flame-in-freefall/blob/main/docs/VULKAN-demo.pdf)
 
 ## Link to Final Project
 
@@ -37,28 +37,28 @@ https://flame-in-freefall-eight.vercel.app
 
 ## Detailed Project Description
 
-**What it does.** SARDOR has seven views:
+**What it does.** VULKAN has seven views:
 
 - **Overview** ranks ten fire-safety insights by mission impact. Each insight has a recommended engineering action and its citations.
 - **Investigation Atlas** summarizes every investigation: objectives, fuels and sample sizes, oxygen, pressure and flow ranges, diluents, sensors and findings. It has search, filters and side-by-side comparison.
 - **Flammability Map** plots each investigation's tested oxygen–pressure range against real spacecraft atmospheres. It shows that most data sits at 21% O₂ and 1 atm. Exploration atmospheres (30–34% O₂ at 8.2–10.2 psia) are covered only by Saffire IV–VI and SoFIE.
 - **Fire Risk Explorer** estimates whether a material can sustain a flame at any oxygen level, pressure, gravity and ventilation speed, and shows the flight data behind the estimate.
 - **Mission Ranker** scores investigations with weights the team can adjust and explains each score.
-- **Ask SARDOR** answers plain-language questions with citations, a confidence level and research-gap warnings.
+- **Ask VULKAN** answers plain-language questions with citations, a confidence level and research-gap warnings.
 - **Gaps & Earth** lists the open questions, the planned investigations that will answer them (FM2, FLARE), and NASA fire-safety spinoffs.
 
 **Languages and voice.** The interface, the curated content and the answers are available in English, Russian and Uzbek. Engineers and students who do not read English can use the NASA record too.
 
-A voice assistant lets users ask by speaking and hear the answer. Voice answers are short and give the key action first. A hands-free mode listens for "Hey SARDOR". The commands "fire" and "smoke" return cited immediate actions instantly, even offline. These are labelled as training guidance, not official procedure.
+A voice assistant lets users ask by speaking and hear the answer. Voice answers are short and give the key action first. A hands-free mode listens for "Hey VULKAN". The commands "fire" and "smoke" return cited immediate actions instantly, even offline. These are labelled as training guidance, not official procedure.
 
-**How it works.** SARDOR is a static web app (HTML, CSS, JavaScript and hand-built SVG charts). It loads fast and runs offline. The intelligence layer has four parts:
+**How it works.** VULKAN is a static web app (HTML, CSS, JavaScript and hand-built SVG charts). It loads fast and runs offline. The intelligence layer has four parts:
 
 1. **Curated record.** A retrieval engine indexes 139 evidence passages built from the curated NASA data.
-2. **Live NASA reports.** For each question, an AI model writes two English keyword searches, and SARDOR queries the NASA Technical Reports Server (NTRS) public API. The matching report abstracts are added as extra evidence, cited by their NTRS record number. NTRS holds 1,077 records on microgravity combustion, 871 on spacecraft fire and 682 on flammability.
-3. **Answer model.** Claude (Anthropic) or an OpenAI model answers from these passages only, and must cite each claim. When the NASA evidence does not cover a question, SARDOR says what data is missing. Any background it adds is labelled "general knowledge, not NASA data". API keys stay in serverless functions, with rate limits and cost caps.
+2. **Live NASA reports.** For each question, an AI model writes two English keyword searches, and VULKAN queries the NASA Technical Reports Server (NTRS) public API. The matching report abstracts are added as extra evidence, cited by their NTRS record number. NTRS holds 1,077 records on microgravity combustion, 871 on spacecraft fire and 682 on flammability.
+3. **Answer model.** Claude (Anthropic) or an OpenAI model answers from these passages only, and must cite each claim. When the NASA evidence does not cover a question, VULKAN says what data is missing. Any background it adds is labelled "general knowledge, not NASA data". API keys stay in serverless functions, with rate limits and cost caps.
 4. **Offline reasoner.** When no AI service is available, an offline reasoner answers from the same evidence.
 
-Whenever a question mentions a material, atmosphere or mission, SARDOR also runs the flammability model and the ranker. The flammability model rests on three pieces of physics:
+Whenever a question mentions a material, atmosphere or mission, VULKAN also runs the flammability model and the ranker. The flammability model rests on three pieces of physics:
 
 - the U-shaped dependence of limiting oxygen on flow speed, measured for solids in microgravity
 - buoyant flow that scales with gravity to the one-third power

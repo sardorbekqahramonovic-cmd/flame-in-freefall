@@ -1,18 +1,18 @@
 /*
- * SARDOR internationalisation: English, Russian, Uzbek (Latin).
+ * VULKAN internationalisation: English, Russian, Uzbek (Latin).
  * - E.t(key, vars) returns an interface string in the current language.
  * - E.setLang(lang) swaps the curated content (investigations, insights, gaps…)
  *   for its translation from E.L10N[lang], falling back to English per field.
  * Numbers, ids, units and NASA source titles stay unchanged.
  */
 (function () {
-  const E = (window.SARDOR = window.SARDOR || {});
+  const E = (window.VULKAN = window.VULKAN || {});
   E.LANGS = { en: "EN", ru: "RU", uz: "UZ" };
   E.LANG_NAMES = { en: "English", ru: "Russian", uz: "Uzbek" };
 
   // key: [English, Russian, Uzbek]
   const UI = {
-    "brand.sub": ["Safety Assistant for Risk and Data from Orbital Research", "Помощник по пожарной безопасности на основе орбитальных исследований", "Orbital tadqiqotlarga asoslangan yong'in xavfsizligi yordamchisi"],
+    "brand.sub": ["Fire-safety insights from NASA microgravity combustion data", "Пожарная безопасность на основе данных NASA о горении в микрогравитации", "NASA mikrogravitatsiya yonish ma'lumotlari asosida yong'in xavfsizligi"],
     "top.mission": ["Mission", "Миссия", "Missiya"],
     "top.theme": ["Toggle light or dark theme", "Светлая или тёмная тема", "Yorug' yoki qorong'i mavzu"],
     "top.lang": ["Interface language", "Язык интерфейса", "Interfeys tili"],
@@ -22,25 +22,25 @@
     "tab.map": ["Flammability Map", "Карта горючести", "Yonuvchanlik xaritasi"],
     "tab.risk": ["Fire Risk Explorer", "Оценка пожарного риска", "Yong'in xavfi tahlili"],
     "tab.rank": ["Mission Ranker", "Рейтинг для миссии", "Missiya reytingi"],
-    "tab.ask": ["Ask SARDOR", "Спросить SARDOR", "SARDOR'dan so'rash"],
+    "tab.ask": ["Ask VULKAN", "Спросить VULKAN", "VULKAN'dan so'rash"],
     "tab.gaps": ["Gaps & Earth", "Пробелы и Земля", "Bo'shliqlar va Yer"],
     "footer.1": ["Built for the NASA Space Apps Challenge 2026, “Flame in Freefall”. Data curated from public NASA sources: the PSI Data Repository, NASA Glenn Combustion Science, NASA investigation fact sheets and <em>A Researcher's Guide to ISS Combustion Science</em>. Each record links to its source.", "Создано для NASA Space Apps Challenge 2026, задача «Flame in Freefall». Данные отобраны из открытых источников NASA: репозиторий PSI, NASA Glenn Combustion Science, информационные листы экспериментов и <em>A Researcher's Guide to ISS Combustion Science</em>. Каждая запись ссылается на свой источник.", "NASA Space Apps Challenge 2026, “Flame in Freefall” musobaqasi uchun yaratilgan. Ma'lumotlar NASA'ning ochiq manbalaridan olingan: PSI repozitoriysi, NASA Glenn Combustion Science, tajribalar ma'lumotnomalari va <em>A Researcher's Guide to ISS Combustion Science</em>. Har bir yozuv o'z manbasiga havola qiladi."],
     "footer.2": ["The Fire Risk Explorer is a transparent, physics-informed screening model for exploring trends. It is not a substitute for NASA-STD-6001 material certification.", "Оценка пожарного риска — прозрачная физическая модель для изучения тенденций. Она не заменяет сертификацию материалов по NASA-STD-6001.", "Yong'in xavfi tahlili tendensiyalarni o'rganish uchun ochiq, fizikaga asoslangan model. U NASA-STD-6001 bo'yicha materiallarni sertifikatlashning o'rnini bosmaydi."],
-    "footer.3": ["AI use: the code was written with help from Anthropic's Claude and reviewed by the team. Ask SARDOR answers are AI-generated from the cited NASA sources, and spoken answers use an AI-generated voice (OpenAI text-to-speech) or your browser's voice. No NASA logos or branding are used.", "Использование ИИ: код написан с помощью Claude (Anthropic) и проверен командой. Ответы «Спросить SARDOR» генерируются ИИ на основе указанных источников NASA, а ответы вслух озвучивает синтетический голос ИИ (OpenAI text-to-speech) или голос вашего браузера. Логотипы и символика NASA не используются.", "Sun'iy intellektdan foydalanish: kod Anthropic'ning Claude yordamida yozilgan va jamoa tomonidan tekshirilgan. SARDOR javoblarini sun'iy intellekt ko'rsatilgan NASA manbalari asosida yaratadi, ovozli javoblarni esa sun'iy intellekt ovozi (OpenAI text-to-speech) yoki brauzeringiz ovozi o'qiydi. NASA logotiplari va ramzlari ishlatilmagan."],
+    "footer.3": ["AI use: the code was written with help from Anthropic's Claude and reviewed by the team. Ask VULKAN answers are AI-generated from the cited NASA sources, and spoken answers use an AI-generated voice (OpenAI text-to-speech) or your browser's voice. No NASA logos or branding are used.", "Использование ИИ: код написан с помощью Claude (Anthropic) и проверен командой. Ответы «Спросить VULKAN» генерируются ИИ на основе указанных источников NASA, а ответы вслух озвучивает синтетический голос ИИ (OpenAI text-to-speech) или голос вашего браузера. Логотипы и символика NASA не используются.", "Sun'iy intellektdan foydalanish: kod Anthropic'ning Claude yordamida yozilgan va jamoa tomonidan tekshirilgan. VULKAN javoblarini sun'iy intellekt ko'rsatilgan NASA manbalari asosida yaratadi, ovozli javoblarni esa sun'iy intellekt ovozi (OpenAI text-to-speech) yoki brauzeringiz ovozi o'qiydi. NASA logotiplari va ramzlari ishlatilmagan."],
     "ug": ["µg", "µg", "µg"],
     "u.kpa": ["kPa", "кПа", "kPa"],
     "u.cms": ["cm/s", "см/с", "sm/s"],
     "u.cm": ["cm", "см", "sm"],
-    "top.home": ["SARDOR home", "SARDOR, главная", "SARDOR bosh sahifa"],
+    "top.home": ["VULKAN home", "VULKAN, главная", "VULKAN bosh sahifa"],
     "top.sections": ["Sections", "Разделы", "Bo'limlar"],
     "dr.closeAria": ["Close", "Закрыть", "Yopish"],
 
     // overview
     "ov.eyebrow": ["NASA Space Apps 2026 · Flame in Freefall", "NASA Space Apps 2026 · Flame in Freefall", "NASA Space Apps 2026 · Flame in Freefall"],
-    "ov.h1": ["Fire behaves differently off Earth. <em>SARDOR</em> shows what NASA has learned, and what it means for the Moon and Mars.", "Вне Земли огонь ведёт себя иначе. <em>SARDOR</em> показывает, что узнало NASA и что это значит для Луны и Марса.", "Yerdan tashqarida olov boshqacha yonadi. <em>SARDOR</em> NASA nimalarni o'rganganini va bu Oy hamda Mars uchun nimani anglatishini ko'rsatadi."],
-    "ov.lede": ["{n} NASA combustion investigations, from Shuttle flame balls to Saffire's spacecraft-scale fires, curated into one searchable atlas. SARDOR ranks them for your mission, maps where the evidence is thin, estimates material flammability in habitat atmospheres, and answers questions with cited sources.", "{n} исследований горения NASA — от «огненных шаров» на шаттле до пожаров масштаба корабля в Saffire — собраны в один атлас с поиском. SARDOR ранжирует их для вашей миссии, показывает, где данных мало, оценивает горючесть материалов в атмосфере жилых модулей и отвечает на вопросы со ссылками на источники.", "NASA'ning {n} ta yonish tadqiqoti, shattldagi “olov sharlari”dan tortib Saffire'ning kema miqyosidagi yong'inlarigacha, bitta qidiruvli atlasga jamlangan. SARDOR ularni missiyangiz uchun tartiblaydi, dalillar kam joylarni ko'rsatadi, yashash modullari atmosferasida materiallar yonuvchanligini baholaydi va savollarga manbalar bilan javob beradi."],
+    "ov.h1": ["Fire behaves differently off Earth. <em>VULKAN</em> shows what NASA has learned, and what it means for the Moon and Mars.", "Вне Земли огонь ведёт себя иначе. <em>VULKAN</em> показывает, что узнало NASA и что это значит для Луны и Марса.", "Yerdan tashqarida olov boshqacha yonadi. <em>VULKAN</em> NASA nimalarni o'rganganini va bu Oy hamda Mars uchun nimani anglatishini ko'rsatadi."],
+    "ov.lede": ["{n} NASA combustion investigations, from Shuttle flame balls to Saffire's spacecraft-scale fires, curated into one searchable atlas. VULKAN ranks them for your mission, maps where the evidence is thin, estimates material flammability in habitat atmospheres, and answers questions with cited sources.", "{n} исследований горения NASA — от «огненных шаров» на шаттле до пожаров масштаба корабля в Saffire — собраны в один атлас с поиском. VULKAN ранжирует их для вашей миссии, показывает, где данных мало, оценивает горючесть материалов в атмосфере жилых модулей и отвечает на вопросы со ссылками на источники.", "NASA'ning {n} ta yonish tadqiqoti, shattldagi “olov sharlari”dan tortib Saffire'ning kema miqyosidagi yong'inlarigacha, bitta qidiruvli atlasga jamlangan. VULKAN ularni missiyangiz uchun tartiblaydi, dalillar kam joylarni ko'rsatadi, yashash modullari atmosferasida materiallar yonuvchanligini baholaydi va savollarga manbalar bilan javob beradi."],
     "ov.btnRisk": ["Explore fire risk for {s}", "Оценить риск пожара: {s}", "Yong'in xavfini baholash: {s}"],
-    "ov.btnAsk": ["Ask SARDOR", "Спросить SARDOR", "SARDOR'dan so'rash"],
+    "ov.btnAsk": ["Ask VULKAN", "Спросить VULKAN", "VULKAN'dan so'rash"],
     "ov.btnMap": ["See the evidence map", "Открыть карту данных", "Dalillar xaritasini ko'rish"],
     "ov.flame1": ["1 g · buoyancy pulls air up<br>tall, yellow, sooty", "1 g · подъёмная сила тянет воздух вверх<br>высокое, жёлтое, коптящее", "1 g · ko'tarilish kuchi havoni yuqoriga tortadi<br>baland, sariq, qurumli"],
     "ov.flame2": ["Microgravity · diffusion only<br>dim blue sphere", "Микрогравитация · только диффузия<br>тусклая голубая сфера", "Mikrogravitatsiya · faqat diffuziya<br>xira ko'k shar"],
@@ -125,7 +125,7 @@
     "layer.prevention": ["Prevention", "Профилактика", "Oldini olish"],
     "layer.detection": ["Detection", "Обнаружение", "Aniqlash"],
     "layer.suppression": ["Suppression", "Тушение", "O'chirish"],
-    "eng.offline": ["SARDOR offline reasoner", "Офлайн-модуль SARDOR", "SARDOR oflayn tahlilchisi"],
+    "eng.offline": ["VULKAN offline reasoner", "Офлайн-модуль VULKAN", "VULKAN oflayn tahlilchisi"],
     "eng.claude": ["Claude", "Claude", "Claude"],
     "eng.confidence": ["confidence", "достоверность", "ishonchlilik"],
 
@@ -151,7 +151,7 @@
 
     // risk
     "rk.title": ["Fire Risk Explorer", "Оценка пожарного риска", "Yong'in xavfi tahlili"],
-    "rk.desc": ["Choose an atmosphere, gravity level, ventilation speed and material. SARDOR estimates whether a flame can spread, shows the evidence behind the estimate, and flags where no flight data exists yet.", "Выберите атмосферу, гравитацию, скорость вентиляции и материал. SARDOR оценит, может ли распространяться пламя, покажет данные, на которых основана оценка, и отметит, где лётных данных ещё нет.", "Atmosfera, gravitatsiya, ventilyatsiya tezligi va materialni tanlang. SARDOR alanga tarqala oladimi yoki yo'qligini baholaydi, bahoning asosidagi dalillarni ko'rsatadi va parvoz ma'lumotlari hali yo'q joylarni belgilaydi."],
+    "rk.desc": ["Choose an atmosphere, gravity level, ventilation speed and material. VULKAN estimates whether a flame can spread, shows the evidence behind the estimate, and flags where no flight data exists yet.", "Выберите атмосферу, гравитацию, скорость вентиляции и материал. VULKAN оценит, может ли распространяться пламя, покажет данные, на которых основана оценка, и отметит, где лётных данных ещё нет.", "Atmosfera, gravitatsiya, ventilyatsiya tezligi va materialni tanlang. VULKAN alanga tarqala oladimi yoki yo'qligini baholaydi, bahoning asosidagi dalillarni ko'rsatadi va parvoz ma'lumotlari hali yo'q joylarni belgilaydi."],
     "rk.material": ["Material", "Материал", "Material"],
     "rk.oxygen": ["Oxygen", "Кислород", "Kislorod"],
     "rk.pressure": ["Pressure", "Давление", "Bosim"],
@@ -230,8 +230,8 @@
     "rn.contrib": ["Score contributions", "Вклад в оценку", "Ballga hissa"],
 
     // ask
-    "ask.title": ["Ask SARDOR", "Спросить SARDOR", "SARDOR'dan so'rash"],
-    "ask.desc": ["Ask in plain language. SARDOR retrieves evidence from the curated NASA record, runs the flammability model when you mention a material or atmosphere, and answers with citations, a confidence level and research-gap warnings.", "Спрашивайте простым языком. SARDOR находит данные в отобранных материалах NASA, запускает модель горючести, если вы упоминаете материал или атмосферу, и отвечает со ссылками, оценкой достоверности и предупреждениями о пробелах в исследованиях.", "Oddiy tilda so'rang. SARDOR NASA ma'lumotlaridan dalil topadi, material yoki atmosferani tilga olsangiz yonuvchanlik modelini ishga tushiradi va manbalar, ishonchlilik darajasi hamda tadqiqot bo'shliqlari haqida ogohlantirish bilan javob beradi."],
+    "ask.title": ["Ask VULKAN", "Спросить VULKAN", "VULKAN'dan so'rash"],
+    "ask.desc": ["Ask in plain language. VULKAN retrieves evidence from the curated NASA record, runs the flammability model when you mention a material or atmosphere, and answers with citations, a confidence level and research-gap warnings.", "Спрашивайте простым языком. VULKAN находит данные в отобранных материалах NASA, запускает модель горючести, если вы упоминаете материал или атмосферу, и отвечает со ссылками, оценкой достоверности и предупреждениями о пробелах в исследованиях.", "Oddiy tilda so'rang. VULKAN NASA ma'lumotlaridan dalil topadi, material yoki atmosferani tilga olsangiz yonuvchanlik modelini ishga tushiradi va manbalar, ishonchlilik darajasi hamda tadqiqot bo'shliqlari haqida ogohlantirish bilan javob beradi."],
     "ask.checking": ["Checking AI engine…", "Проверяем AI-движок…", "AI tizimi tekshirilmoqda…"],
     "ask.placeholder": ["e.g. How should we suppress a fabric fire in a lunar habitat?", "напр. Как тушить возгорание ткани в лунном модуле?", "masalan: Oy modulida mato yong'inini qanday o'chirish kerak?"],
     "ask.aria": ["Your question", "Ваш вопрос", "Savolingiz"],
@@ -242,7 +242,7 @@
     "ask.how2": ["With an AI model online (Claude, or OpenAI as a low-cost option), the server also searches the NASA Technical Reports Server for the question and adds the matching report abstracts. The model must cite every claim; anything not in the NASA sources is marked “general knowledge, not NASA data”.", "Когда AI-модель подключена (Claude или недорогой OpenAI), сервер также ищет вопрос в NASA Technical Reports Server и добавляет аннотации найденных отчётов. Модель обязана ссылаться на источник каждого утверждения; всё, чего нет в источниках NASA, помечается «общие знания, не данные NASA».", "AI modeli ulanganda (Claude yoki arzon OpenAI), server savolni NASA Technical Reports Server'dan ham qidiradi va topilgan hisobotlar annotatsiyalarini qo'shadi. Model har bir da'vo uchun manba ko'rsatishi shart; NASA manbalarida yo'q narsa “umumiy bilim, NASA ma'lumoti emas” deb belgilanadi."],
     "ask.how3": ["Offline, a local reasoner builds the answer from the same evidence, the flammability model and the mission ranker.", "Без сети локальный модуль строит ответ по тем же данным, модели горючести и рейтингу миссии.", "Oflayn rejimda mahalliy tahlilchi javobni xuddi shu dalillar, yonuvchanlik modeli va missiya reytingi asosida tuzadi."],
     "ask.how4": ["Every answer shows the evidence confidence and the data gaps it touches.", "Каждый ответ показывает достоверность данных и затронутые пробелы.", "Har bir javob dalillar ishonchliligini va tegishli bo'shliqlarni ko'rsatadi."],
-    "ask.hello": ["Hello. I'm SARDOR. I know {n} NASA combustion investigations and the current mission context: **{s}**. Ask about materials, oxygen levels, detection, suppression or any investigation.", "Здравствуйте, я SARDOR. Я знаю {n} исследований горения NASA и текущую миссию: **{s}**. Спрашивайте о материалах, уровне кислорода, обнаружении, тушении или любом исследовании.", "Salom, men SARDOR. Men NASA'ning {n} ta yonish tadqiqotini va joriy missiyani bilaman: **{s}**. Materiallar, kislorod darajasi, aniqlash, o'chirish yoki istalgan tadqiqot haqida so'rang."],
+    "ask.hello": ["Hello. I'm VULKAN. I know {n} NASA combustion investigations and the current mission context: **{s}**. Ask about materials, oxygen levels, detection, suppression or any investigation.", "Здравствуйте, я VULKAN. Я знаю {n} исследований горения NASA и текущую миссию: **{s}**. Спрашивайте о материалах, уровне кислорода, обнаружении, тушении или любом исследовании.", "Salom, men VULKAN. Men NASA'ning {n} ta yonish tadqiqotini va joriy missiyani bilaman: **{s}**. Materiallar, kislorod darajasi, aniqlash, o'chirish yoki istalgan tadqiqot haqida so'rang."],
     "ask.conf": ["confidence: {c}", "достоверность: {c}", "ishonchlilik: {c}"],
     "ask.gap": ["gap", "пробел", "bo'shliq"],
     "ask.error": ["Something went wrong: {e}. Please try again.", "Что-то пошло не так: {e}. Попробуйте ещё раз.", "Xatolik yuz berdi: {e}. Qaytadan urinib ko'ring."],
@@ -257,11 +257,11 @@
     "v.listening": ["Listening… tap the microphone to stop", "Слушаю… нажмите на микрофон, чтобы остановить", "Tinglayapman… to'xtatish uchun mikrofonni bosing"],
     "v.transcribing": ["Recognising speech…", "Распознаю речь…", "Nutq aniqlanmoqda…"],
     "v.readAloud": ["Read answers aloud (short answer, key action first)", "Читать ответы вслух (кратко, сначала главное действие)", "Javoblarni ovoz chiqarib o'qish (qisqa, avval asosiy chora)"],
-    "v.wake": ["Hands-free: say “Hey SARDOR”, then your question", "Без рук: скажите «Эй, Сардор» и задайте вопрос", "Qo'lsiz: “Hey SARDOR” deng, keyin savolingizni ayting"],
-    "v.wakeOn": ["Listening for “Hey SARDOR”…", "Жду фразу «Эй, Сардор»…", "“Hey SARDOR” so'zini kutyapman…"],
+    "v.wake": ["Hands-free: say “Hey VULKAN”, then your question", "Без рук: скажите «Эй, Вулкан» и задайте вопрос", "Qo'lsiz: “Hey VULKAN” deng, keyin savolingizni ayting"],
+    "v.wakeOn": ["Listening for “Hey VULKAN”…", "Жду фразу «Эй, Вулкан»…", "“Hey VULKAN” so'zini kutyapman…"],
     "v.wakeHeard": ["Yes? Ask your question.", "Да? Задайте вопрос.", "Ha? Savolingizni bering."],
     "v.wakeUnsupported": ["Hands-free mode needs Chrome or Edge.", "Режим «без рук» работает в Chrome или Edge.", "Qo'lsiz rejim Chrome yoki Edge'da ishlaydi."],
-    "v.wakeMiss": ["Heard “{s}”. Start with “Hey SARDOR” to ask.", "Услышано: «{s}». Чтобы спросить, начните с «Эй, Сардор».", "Eshitildi: “{s}”. Savol berish uchun “Hey SARDOR” deb boshlang."],
+    "v.wakeMiss": ["Heard “{s}”. Start with “Hey VULKAN” to ask.", "Услышано: «{s}». Чтобы спросить, начните с «Эй, Вулкан».", "Eshitildi: “{s}”. Savol berish uchun “Hey VULKAN” deb boshlang."],
     "v.diagLive": ["mic on, listening", "микрофон включён, слушаю", "mikrofon yoniq, tinglayapman"],
     "v.diagOff": ["mic restarting", "микрофон перезапускается", "mikrofon qayta yoqilmoqda"],
     "v.diagHeard": ["hearing: “{s}”", "слышу: «{s}»", "eshityapman: “{s}”"],
@@ -286,7 +286,7 @@
     "v.langName": ["English", "русский", "o'zbek"],
 
     // emergency quick commands (training guidance, cited to the curated evidence)
-    "em.note": ["Training guidance built from the NASA evidence in SARDOR, not an official NASA procedure.", "Учебная памятка на основе данных NASA в SARDOR, а не официальная процедура NASA.", "SARDOR'dagi NASA dalillari asosida tuzilgan o'quv yo'riqnomasi, NASA'ning rasmiy tartibi emas."],
+    "em.note": ["Training guidance built from the NASA evidence in VULKAN, not an official NASA procedure.", "Учебная памятка на основе данных NASA в VULKAN, а не официальная процедура NASA.", "VULKAN'dagi NASA dalillari asosida tuzilgan o'quv yo'riqnomasi, NASA'ning rasmiy tartibi emas."],
     "em.fireTitle": ["**Fire: immediate actions**", "**Пожар: срочные действия**", "**Yong'in: zudlik bilan bajariladigan choralar**"],
     "em.fire1": ["Sound the alarm and alert the crew.", "Подайте сигнал тревоги и предупредите экипаж.", "Signal bering va ekipajni ogohlantiring."],
     "em.fire2": ["Turn the ventilation off: without airflow a microgravity flame is starved of oxygen [SSCE] [INSIGHT-7].", "Отключите вентиляцию: без потока воздуха пламени в микрогравитации не хватает кислорода [SSCE] [INSIGHT-7].", "Ventilyatsiyani o'chiring: havo oqimisiz mikrogravitatsiyada alangaga kislorod yetmaydi [SSCE] [INSIGHT-7]."],
@@ -362,7 +362,7 @@
     "cite.INSIGHT": ["insight", "вывод", "xulosa"],
     "cite.EARTH": ["Earth benefit", "польза для Земли", "Yer uchun foyda"],
     "cite.GENERAL": ["general knowledge, not NASA data", "общие знания, не данные NASA", "umumiy bilim, NASA ma'lumoti emas"],
-    "cite.GENERALtip": ["Not found in the NASA sources SARDOR retrieved; general scientific knowledge, check before relying on it.", "Не найдено в источниках NASA, которые нашёл SARDOR; это общие научные знания, проверьте перед использованием.", "SARDOR topgan NASA manbalarida yo'q; bu umumiy ilmiy bilim, ishonishdan oldin tekshiring."],
+    "cite.GENERALtip": ["Not found in the NASA sources VULKAN retrieved; general scientific knowledge, check before relying on it.", "Не найдено в источниках NASA, которые нашёл VULKAN; это общие научные знания, проверьте перед использованием.", "VULKAN topgan NASA manbalarida yo'q; bu umumiy ilmiy bilim, ishonishdan oldin tekshiring."],
     "cite.NTRS": ["NASA report {y}", "отчёт NASA {y}", "NASA hisoboti {y}"],
     "ask.sources": ["NASA technical reports cited", "Цитируемые технические отчёты NASA", "Iqtibos keltirilgan NASA texnik hisobotlari"],
     "ask.searched": ["Live NTRS search: {n} NASA reports match “{q}”.", "Поиск в NTRS: {n} отчётов NASA по запросу «{q}».", "NTRS qidiruvi: “{q}” bo'yicha {n} ta NASA hisoboti topildi."],
@@ -370,7 +370,7 @@
     "kb.ntrs": ["Each AI answer also searches the NASA Technical Reports Server live: {mc} reports on microgravity combustion, {sf} on spacecraft fire, {fl} on flammability, {fs} on fire suppression and {sd} on smoke detection.", "Каждый ответ AI также ищет в NASA Technical Reports Server: {mc} отчётов о горении в микрогравитации, {sf} о пожарах на кораблях, {fl} о горючести, {fs} о пожаротушении и {sd} об обнаружении дыма.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi: mikrogravitatsiyada yonish bo'yicha {mc}, kemadagi yong'in bo'yicha {sf}, yonuvchanlik bo'yicha {fl}, yong'inni o'chirish bo'yicha {fs} va tutunni aniqlash bo'yicha {sd} ta hisobot."],
     "kb.ntrs3": ["Each AI answer also searches the NASA Technical Reports Server live: {mc} reports on microgravity combustion, {sf} on spacecraft fire and {fl} on flammability.", "Каждый ответ AI также ищет в NASA Technical Reports Server: {mc} отчётов о горении в микрогравитации, {sf} о пожарах на кораблях и {fl} о горючести.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi: mikrogravitatsiyada yonish bo'yicha {mc}, kemadagi yong'in bo'yicha {sf} va yonuvchanlik bo'yicha {fl} ta hisobot."],
     "kb.ntrsLive": ["Each AI answer also searches the NASA Technical Reports Server live.", "Каждый ответ AI также ищет в NASA Technical Reports Server.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi."],
-    "cite.MODEL": ["SARDOR model", "модель SARDOR", "SARDOR modeli"],
+    "cite.MODEL": ["VULKAN model", "модель VULKAN", "VULKAN modeli"],
   };
 
   const SUGGEST = {
@@ -380,7 +380,7 @@
   };
 
   function detect() {
-    try { const s = JSON.parse(localStorage.getItem("sardor:lang")); if (IDX.hasOwnProperty(s)) return s; } catch (e) { /* ignore */ }
+    try { const s = JSON.parse(localStorage.getItem("vulkan:lang")); if (IDX.hasOwnProperty(s)) return s; } catch (e) { /* ignore */ }
     const n = ((typeof navigator !== "undefined" && navigator.language) || "en").toLowerCase();
     return n.startsWith("ru") ? "ru" : n.startsWith("uz") ? "uz" : "en";
   }
@@ -425,7 +425,7 @@
     if (!IDX.hasOwnProperty(lang)) lang = "en";
     if (!ORIG) snapshot();
     E.lang = lang;
-    try { localStorage.setItem("sardor:lang", JSON.stringify(lang)); } catch (e) { /* ignore */ }
+    try { localStorage.setItem("vulkan:lang", JSON.stringify(lang)); } catch (e) { /* ignore */ }
     if (typeof document !== "undefined") document.documentElement.lang = lang;
     const L = (E.L10N && E.L10N[lang]) || {};
     E.INVESTIGATIONS = overlay(clone(ORIG.INVESTIGATIONS), L.inv, (x) => x.id);

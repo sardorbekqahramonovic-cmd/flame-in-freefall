@@ -1,6 +1,6 @@
-/* SARDOR UI */
+/* VULKAN UI */
 (function () {
-  const E = window.SARDOR;
+  const E = window.VULKAN;
   const M = E.model;
   const t = (k, v) => E.t(k, v);
   const fmt = (v) => E.fmt(v);
@@ -11,8 +11,8 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const store = {
-    get(k, d) { try { const v = localStorage.getItem("sardor:" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem("sardor:" + k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
+    get(k, d) { try { const v = localStorage.getItem("vulkan:" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("vulkan:" + k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
   };
   const psia = (kpa) => n1(kpa / 6.895);
   const range = (a, approx, unit = "") => `${approx ? "≈" : ""}${a[0] === a[1] ? fmt(a[0]) : fmt(a[0]) + "–" + fmt(a[1])}${unit}`;
@@ -29,7 +29,7 @@
     chat: [],
     mapCats: Object.keys(E.CATEGORIES),
     voiceMode: store.get("voiceMode", false), // read answers aloud, short answers
-    wake: false, // "Hey SARDOR" hands-free listening (needs a click to start, never persisted)
+    wake: false, // "Hey VULKAN" hands-free listening (needs a click to start, never persisted)
   };
   const scenario = () => E.SCENARIOS.find((s) => s.id === state.scenario) || E.SCENARIOS[0];
 
@@ -495,7 +495,7 @@
     const sim = state.sim;
     v.innerHTML = `
       <div class="view-head"><div><h2>${t("rk.title")}</h2><p>${t("rk.desc")}</p></div></div>
-      <div class="split" style="grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)">
+      <div class="split split-narrow-left">
         <div class="panel controls">
           <div class="presets">${E.SCENARIOS.map((x) => `<button class="chip" data-preset="${x.id}" type="button" aria-pressed="${x.id === s.id}">${esc(x.label.split(" (")[0])}</button>`).join("")}</div>
           <div class="ctrl"><label for="sim-mat">${t("rk.material")}</label><select id="sim-mat">${E.MATERIALS.map((m) => `<option value="${m.id}" ${m.id === sim.materialId ? "selected" : ""}>${esc(m.label)} · LOI ${m.loi}%</option>`).join("")}</select><div class="hint" id="mat-note"></div></div>
@@ -590,7 +590,7 @@
     const colors = { atmosphere: "var(--flame)", hazard: "var(--ember)", scale: "var(--cool)", data: "var(--ok)", recency: "var(--warn)" };
     v.innerHTML = `
       <div class="view-head"><div><h2>${t("rn.title")}</h2><p>${t("rn.desc", { s: esc(s.label), o2: fmt(s.o2), p: fmt(s.p), g: fmt(s.g) })}</p></div></div>
-      <div class="split" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr)">
+      <div class="split split-controls">
         <div class="panel controls">
           ${Object.keys(labels).map((k) => `<div class="ctrl"><label for="w-${k}"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${colors[k]};margin-right:6px"></i>${labels[k]}</span><output id="wo-${k}">${state.weights[k]}</output></label><input type="range" id="w-${k}" min="0" max="50" value="${state.weights[k]}"></div>`).join("")}
           <button class="btn" id="w-reset" type="button">${t("rn.reset")}</button>
@@ -781,7 +781,7 @@
     if (!on) { el.innerHTML = base; return; }
     if (!corpus) {
       try {
-        const r = await fetch((window.SARDOR_CONFIG && window.SARDOR_CONFIG.corpusUrl) || "api/corpus");
+        const r = await fetch((window.VULKAN_CONFIG && window.VULKAN_CONFIG.corpusUrl) || "api/corpus");
         corpus = r.ok ? (await r.json()).ntrs || {} : {};
       } catch (e) { corpus = {}; }
     }

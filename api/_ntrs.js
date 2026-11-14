@@ -1,4 +1,4 @@
-// NASA Technical Reports Server (NTRS) search, used to widen SARDOR's evidence beyond the curated record.
+// NASA Technical Reports Server (NTRS) search, used to widen VULKAN's evidence beyond the curated record.
 // Public API, no key: https://ntrs.nasa.gov/api/citations/search?q=...  (all query words must match)
 import { clean } from "./_shared.js";
 

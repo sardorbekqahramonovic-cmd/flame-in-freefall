@@ -1,5 +1,5 @@
 /*
- * SARDOR curated dataset: NASA microgravity combustion investigations.
+ * VULKAN curated dataset: NASA microgravity combustion investigations.
  *
  * Every investigation lists the NASA source pages it was curated from (links).
  * Numeric test envelopes come from those pages; values flagged approx:true are
@@ -7,7 +7,7 @@
  * (shown in the UI with a "≈" sign). Pressures are kPa (101.3 kPa = 1 atm = 14.7 psia).
  * O2 is percent by volume. Flow is the imposed flow velocity in cm/s.
  */
-window.SARDOR = window.SARDOR || {};
+window.VULKAN = window.VULKAN || {};
 
 const SRC = {
   guide: { label: "A Researcher's Guide to ISS Combustion Science (NASA, 2015)", url: "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/" },
@@ -27,10 +27,10 @@ const SRC = {
   sameDoi: { label: "Meyer et al. 2018, Fire Safety Journal, doi:10.1016/j.firesaf.2018.04.004", url: "https://doi.org/10.1016/j.firesaf.2018.04.004" },
   challenge: { label: "NASA Space Apps 2026: Flame in Freefall challenge", url: "https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/" },
 };
-window.SARDOR.SRC = SRC;
+window.VULKAN.SRC = SRC;
 
 /* category keys: solid | droplet | gas | detection | suppression | cool | future */
-window.SARDOR.CATEGORIES = {
+window.VULKAN.CATEGORIES = {
   solid: { label: "Solid materials", color: "var(--ember)" },
   droplet: { label: "Liquid droplets", color: "var(--flame)" },
   gas: { label: "Gaseous flames", color: "#3fc6c6" },
@@ -39,7 +39,7 @@ window.SARDOR.CATEGORIES = {
   future: { label: "Planned / partial gravity", color: "var(--warn)" },
 };
 
-window.SARDOR.INVESTIGATIONS = [
+window.VULKAN.INVESTIGATIONS = [
   {
     id: "BASS",
     name: "BASS",
@@ -569,7 +569,7 @@ window.SARDOR.INVESTIGATIONS = [
 ];
 
 /* Habitat / mission atmospheres used as mission context */
-window.SARDOR.SCENARIOS = [
+window.VULKAN.SCENARIOS = [
   { id: "iss", label: "ISS / Orion cabin", o2: 21, p: 101.3, g: 0, vent: 10, note: "Sea-level air, 14.7 psia, microgravity ventilation ~5–20 cm/s.", src: "ISS standard atmosphere" },
   { id: "lunar", label: "Lunar surface habitat", o2: 30, p: 70.3, g: 0.166, vent: 10, note: "≥30% O2 at ≤10.2 psia, as described for a Moon base in the challenge.", src: "Space Apps 2026 challenge text" },
   { id: "rover", label: "Pressurized rover / lander (8.2 psia)", o2: 34, p: 56.5, g: 0.166, vent: 15, note: "NASA exploration atmosphere 8.2 psia / 34% O2.", src: "NASA Exploration Atmospheres Working Group" },
@@ -579,7 +579,7 @@ window.SARDOR.SCENARIOS = [
 ];
 
 /* Reference atmospheres drawn on the flammability map */
-window.SARDOR.REF_ATMOS = [
+window.VULKAN.REF_ATMOS = [
   { id: "sea", label: "Earth sea level / ISS", o2: 21, p: 101.3, dx: 22, dy: 26, anchor: "start" },
   { id: "shuttle", label: "Shuttle pre-EVA 10.2 psia", o2: 26.5, p: 70.3, dx: -11, dy: 12, anchor: "end" },
   { id: "lunar", label: "Moon base (challenge)", o2: 30, p: 70.3, dx: 11, dy: -6, anchor: "start" },
@@ -591,7 +591,7 @@ window.SARDOR.REF_ATMOS = [
 
 /* Materials for the risk explorer. loi = typical Limiting Oxygen Index (ASTM D2863, % O2)
    used as the normal-gravity reference. thin=true means thermally thin. */
-window.SARDOR.MATERIALS = [
+window.VULKAN.MATERIALS = [
   { id: "sibal", label: "Cotton-fiberglass fabric (SIBAL)", loi: 18.5, thin: true, note: "Saffire / BASS reference fabric; LOI estimated from cotton." },
   { id: "paper", label: "Paper / thin cellulose", loi: 18.0, thin: true, note: "Wipes, labels, checklists." },
   { id: "pmma", label: "Acrylic (PMMA), thick", loi: 17.3, thin: false, note: "Window and panel acrylic; BASS, Saffire-II, SoFIE." },
@@ -603,7 +603,7 @@ window.SARDOR.MATERIALS = [
   { id: "ptfe", label: "Teflon (PTFE)", loi: 95.0, thin: false, note: "Wire insulation; very hard to ignite." },
 ];
 
-window.SARDOR.INCIDENTS = [
+window.VULKAN.INCIDENTS = [
   { year: 1967, title: "Apollo 1", kind: "incident", text: "A pre-launch test fire in a 100% oxygen cabin at 16.7 psia killed the crew of three. Led to new cabin atmospheres, a quick-release hatch and strict material flammability control.", link: { label: "NASA SMA: Apollo 1", url: "https://sma.nasa.gov/sma-disciplines/accllp/apollo-1" } },
   { year: 1970, title: "Apollo 13", kind: "incident", text: "Damaged wiring in an oxygen tank caused a fire and explosion that crippled the service module. Lesson: oxygen systems and wire insulation are ignition sources.", link: { label: "NASA SMA: Apollo 13", url: "https://sma.nasa.gov/sma-disciplines/accllp/apollo-13" } },
   { year: 1990, title: "SSCE flies on the Shuttle", kind: "research", text: "First systematic flame spread tests over solids in orbit.", inv: "SSCE" },
@@ -618,14 +618,14 @@ window.SARDOR.INCIDENTS = [
   { year: 2027, title: "FM2: first fire on the Moon", kind: "research", text: "Planned first combustion experiment on another planetary body.", inv: "FM2" },
 ];
 
-window.SARDOR.SPINOFFS = [
+window.VULKAN.SPINOFFS = [
   { title: "Firefighter air tanks", era: "1970s", text: "Lightweight spacesuit life-support technology adapted into firefighter breathing gear.", link: { label: "NASA Spinoff: Fireman's Air Tanks", url: "https://spinoff.nasa.gov/node/9582" } },
   { title: "Smoke detector that ignores dust", era: "1970s", text: "A Shuttle detector that tells smoke from dust, cutting nuisance alarms; used in industry such as mining.", link: { label: "NASA Spinoff: Fire Detector", url: "https://spinoff.nasa.gov/node/9407" } },
   { title: "Firefighter clothing", era: "1980s", text: "Spacesuit materials applied to lighter, more heat-resistant fire attire.", link: { label: "NASA Spinoff: New Technology for the Fire Attire", url: "https://spinoff.nasa.gov/node/9918" } },
   { title: "Fine water-mist extinguishers", era: "2010s", text: "Water-mist portable extinguishers certified for the ISS; mist suppression is also used on Earth where water damage matters.", link: SRC.guide },
 ];
 
-window.SARDOR.GAPS = [
+window.VULKAN.GAPS = [
   { title: "No partial-gravity combustion data", severity: "crit", text: "PSI holds microgravity and normal-gravity data only. Lunar (0.17 g) and Mars (0.38 g) buoyant flows are an untested regime. FM2, LUCI and FLARE are the planned sources; ACME E-FIELD mimics partial gravity with electric fields.", inv: ["FM2", "FLARE", "ACME"] },
   { title: "Sparse solid-material data in exploration atmospheres", severity: "crit", text: "Only Saffire IV–VI and SoFIE reach the 30–34% O2, 8.2–10.2 psia range planned for habitats and rovers. Most solid-fuel data sits at 21% O2 and 1 atm.", inv: ["SAFFIRE-IV-VI", "SoFIE"] },
   { title: "Suppression in partial gravity", severity: "warn", text: "FLEX set microgravity suppressant margins with droplets; no data exists for CO2 or water mist against solid fires at lunar or Mars gravity.", inv: ["FLEX"] },

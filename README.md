@@ -1,10 +1,10 @@
-# SARDOR: Safety Assistant for Risk and Data from Orbital Research
+# VULKAN: fire-safety insights from NASA microgravity combustion data
 
-*Sardor* is Uzbek for "leader" or "commander", the crew member who takes charge when something goes wrong. The name also says it out loud: you wake the voice assistant with "Hey SARDOR", a common Uzbek name that Uzbek and Russian speech recognisers spell reliably.
+*Vulkan* means "volcano" in Uzbek and Russian. You wake the voice assistant with "Hey VULKAN", an everyday word that speakers of both languages say naturally; the recogniser also accepts the Uzbek literary form "vulqon" and the English spelling "Vulcan".
 
 **NASA Space Apps Challenge 2026 · Flame in Freefall: SI-Powered Fire Safety Insights from Microgravity Combustion Data**
 
-SARDOR turns decades of NASA microgravity combustion experiments into ranked, explained fire-safety insights for Moon and Mars missions. Pick a mission (ISS, lunar habitat, pressurized rover, Mars habitat, Mars transit, spacesuit) and every view re-ranks and re-interprets the evidence for that atmosphere and gravity level.
+VULKAN turns decades of NASA microgravity combustion experiments into ranked, explained fire-safety insights for Moon and Mars missions. Pick a mission (ISS, lunar habitat, pressurized rover, Mars habitat, Mars transit, spacesuit) and every view re-ranks and re-interprets the evidence for that atmosphere and gravity level.
 
 ## What it does
 
@@ -15,10 +15,10 @@ SARDOR turns decades of NASA microgravity combustion experiments into ranked, ex
 | **Flammability Map** | Every investigation's tested O₂–pressure envelope against real spacecraft atmospheres (ISS, Shuttle 10.2 psia, Moon base, 8.2 psia exploration atmosphere, spacesuit, Apollo 1). Shows at a glance that most data sits at 21 % O₂ / 1 atm, and how little covers exploration atmospheres. |
 | **Fire Risk Explorer** | A transparent, physics-informed screening model: choose material, O₂, pressure, gravity and ventilation, and see whether a flame can spread, the margin to the limit, a limiting-O₂-vs-flow curve with Moon / Mars / Earth markers, and which flight data supports the estimate. |
 | **Mission Ranker** | Scores every investigation for the mission with adjustable weights (atmosphere match, hazard relevance, fire scale, data richness, recency) and explains each score. |
-| **Ask SARDOR** | Natural-language Q&A. BM25 retrieval over 139 evidence passages, then Claude answers only from those passages with citations. Offline, a local reasoner answers from the same evidence, runs the model and the ranker, and flags research gaps. |
+| **Ask VULKAN** | Natural-language Q&A. BM25 retrieval over 139 evidence passages, then Claude answers only from those passages with citations. Offline, a local reasoner answers from the same evidence, runs the model and the ranker, and flags research gaps. |
 | **Live NASA reports** | Every AI answer also searches the [NASA Technical Reports Server](https://ntrs.nasa.gov) (NTRS) public API for that question: a cheap model turns the question, in any of the three languages, into English keywords; the matching report abstracts join the evidence and are cited with links (`[NTRS-…]`). This reaches thousands of NASA reports on microgravity combustion, spacecraft fire, flammability, suppression and detection; the Ask view shows the live counts. When the NASA sources do not answer, the model may add general knowledge, always marked "general knowledge, not NASA data". |
-| **Voice assistant** | A microphone button in Ask SARDOR: speak a question, get the answer on screen and read aloud. Voice mode gives a short answer with the key action first. Hands-free mode listens for “Hey SARDOR”. Saying or typing “fire” or “smoke” returns cited immediate actions instantly, with no AI call; “stop” silences the voice. Works in English, Russian and Uzbek. |
-| **EN / RU / UZ** | The whole interface and the curated content (investigations, insights, gaps, history, atmospheres, materials) are available in English, Russian and Uzbek. The switch is in the top bar and is remembered per browser. Ask SARDOR retrieves evidence in the chosen language, parses questions written in any of the three, and Claude answers in that language. |
+| **Voice assistant** | A microphone button in Ask VULKAN: speak a question, get the answer on screen and read aloud. Voice mode gives a short answer with the key action first. Hands-free mode listens for “Hey VULKAN”. Saying or typing “fire” or “smoke” returns cited immediate actions instantly, with no AI call; “stop” silences the voice. Works in English, Russian and Uzbek. |
+| **EN / RU / UZ** | The whole interface and the curated content (investigations, insights, gaps, history, atmospheres, materials) are available in English, Russian and Uzbek. The switch is in the top bar and is remembered per browser. Ask VULKAN retrieves evidence in the chosen language, parses questions written in any of the three, and Claude answers in that language. |
 | **Gaps & Earth** | Ranked research gaps (partial gravity, exploration atmospheres, detection of cool flames…) linked to planned investigations, NASA spinoffs, and the full reference list. |
 
 ## Run it
@@ -33,12 +33,12 @@ python3 -m http.server 8080   # then open http://localhost:8080
 
 | Variable | What it enables |
 |---|---|
-| `ANTHROPIC_API_KEY` | Claude answers in Ask SARDOR (used first when set). |
+| `ANTHROPIC_API_KEY` | Claude answers in Ask VULKAN (used first when set). |
 | `OPENAI_API_KEY` | Voice: speech recognition (`gpt-4o-mini-transcribe`) and a natural voice (`gpt-4o-mini-tts`). Also answers questions with `gpt-4o-mini` when no Anthropic key is set. |
 | `OPENAI_MODEL`, `OPENAI_STT_MODEL`, `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | Optional overrides (defaults above, voice `cedar`). OpenAI lists the current audio models as deprecated with shutdown in early 2027; set `OPENAI_STT_MODEL=gpt-transcribe` when switching. |
 | `ALLOWED_ORIGINS` | Optional extra sites (comma-separated hosts) allowed to call the API. |
 
-Cost controls for a small prepaid balance: questions use a cheap model with a capped answer length, recordings are limited to about 15 seconds, spoken text to 500 characters, each IP to 20 requests a minute per instance, and other websites cannot call the API. Emergency commands and the “Hey SARDOR” wake word cost nothing (they run in the browser). Rough cost with OpenAI: about $0.001 per typed question and under $0.01 per spoken question with a spoken answer.
+Cost controls for a small prepaid balance: questions use a cheap model with a capped answer length, recordings are limited to about 15 seconds, spoken text to 500 characters, each IP to 20 requests a minute per instance, and other websites cannot call the API. Emergency commands and the “Hey VULKAN” wake word cost nothing (they run in the browser). Rough cost with OpenAI: about $0.001 per typed question and under $0.01 per spoken question with a spoken answer.
 
 Without keys (for example on GitHub Pages) the app runs fully with the offline reasoner, and voice uses the browser's built-in speech (best in Chrome or Edge). For Uzbek, a natural Uzbek voice installed in the browser (Microsoft Edge ships them) is used first, otherwise the OpenAI voice. Uzbek answers are rewritten for speech before they are read (numbers, units, Roman numerals and acronyms become Uzbek words), because voices otherwise read digits in English.
 
@@ -71,14 +71,14 @@ voice.js                 speech in/out: OpenAI via api/voice, or the browser's W
 api/ask.js               serverless Q&A endpoint: Claude, or OpenAI as a low-cost option
 api/voice.js             serverless speech-to-text and text-to-speech (OpenAI)
 data/                    curated investigations, atmospheres, materials, insights, RU / UZ translations
-docs/                    submission text, demo deck (SARDOR-demo.pdf) and demo video script
+docs/                    submission text, demo deck (VULKAN-demo.pdf) and demo video script
 tests/                   model checks
 ```
 
 ## Use of AI
 
 - **Code and data:** written by the team with help from Anthropic's Claude as a coding and research assistant, and reviewed by the team. Commits made with that help carry a `Co-Authored-By: Claude` trailer, and `index.html` has an `ai-disclosure` meta tag.
-- **Answers:** Ask SARDOR answers are generated at runtime by Claude or an OpenAI model from cited NASA passages. Anything not backed by those passages is labelled "general knowledge, not NASA data".
+- **Answers:** Ask VULKAN answers are generated at runtime by Claude or an OpenAI model from cited NASA passages. Anything not backed by those passages is labelled "general knowledge, not NASA data".
 - **Audio:** spoken answers use AI-generated speech (OpenAI text-to-speech) or the browser's own voice. The interface says so next to the voice controls, and `api/voice.js` returns an `x-ai-generated` header with each audio clip.
 - **Deck:** the demo slides were laid out with AI help; their images are screenshots of the app. No AI-generated images or video are used, and no NASA logos or branding appear anywhere.
 
