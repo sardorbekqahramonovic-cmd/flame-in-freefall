@@ -1,9 +1,9 @@
-/* EMBER content in Uzbek (Latin script). Missing fields fall back to English (see i18n.js).
+/* SARDOR content in Uzbek (Latin script). Missing fields fall back to English (see i18n.js).
  * Investigation names, ids, numbers and NASA source titles are not translated. */
-window.EMBER = window.EMBER || {};
-window.EMBER.L10N = window.EMBER.L10N || {};
+window.SARDOR = window.SARDOR || {};
+window.SARDOR.L10N = window.SARDOR.L10N || {};
 
-window.EMBER.L10N.uz = {
+window.SARDOR.L10N.uz = {
   cat: {
     solid: "Qattiq materiallar",
     droplet: "Suyuqlik tomchilari",

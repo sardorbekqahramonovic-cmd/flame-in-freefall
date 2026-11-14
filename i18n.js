@@ -1,18 +1,18 @@
 /*
- * EMBER internationalisation: English, Russian, Uzbek (Latin).
+ * SARDOR internationalisation: English, Russian, Uzbek (Latin).
  * - E.t(key, vars) returns an interface string in the current language.
  * - E.setLang(lang) swaps the curated content (investigations, insights, gaps…)
  *   for its translation from E.L10N[lang], falling back to English per field.
  * Numbers, ids, units and NASA source titles stay unchanged.
  */
 (function () {
-  const E = (window.EMBER = window.EMBER || {});
+  const E = (window.SARDOR = window.SARDOR || {});
   E.LANGS = { en: "EN", ru: "RU", uz: "UZ" };
   E.LANG_NAMES = { en: "English", ru: "Russian", uz: "Uzbek" };
 
   // key: [English, Russian, Uzbek]
   const UI = {
-    "brand.sub": ["Exploration Microgravity Burn Evidence Reasoner", "Анализ данных о горении в микрогравитации", "Mikrogravitatsiyada yonish dalillari tahlilchisi"],
+    "brand.sub": ["Safety Assistant for Risk and Data from Orbital Research", "Помощник по пожарной безопасности на основе орбитальных исследований", "Orbital tadqiqotlarga asoslangan yong'in xavfsizligi yordamchisi"],
     "top.mission": ["Mission", "Миссия", "Missiya"],
     "top.theme": ["Toggle light or dark theme", "Светлая или тёмная тема", "Yorug' yoki qorong'i mavzu"],
     "top.lang": ["Interface language", "Язык интерфейса", "Interfeys tili"],
@@ -22,7 +22,7 @@
     "tab.map": ["Flammability Map", "Карта горючести", "Yonuvchanlik xaritasi"],
     "tab.risk": ["Fire Risk Explorer", "Оценка пожарного риска", "Yong'in xavfi tahlili"],
     "tab.rank": ["Mission Ranker", "Рейтинг для миссии", "Missiya reytingi"],
-    "tab.ask": ["Ask EMBER", "Спросить EMBER", "EMBER'dan so'rash"],
+    "tab.ask": ["Ask SARDOR", "Спросить SARDOR", "SARDOR'dan so'rash"],
     "tab.gaps": ["Gaps & Earth", "Пробелы и Земля", "Bo'shliqlar va Yer"],
     "footer.1": ["Built for the NASA Space Apps Challenge 2026, “Flame in Freefall”. Data curated from public NASA sources: the PSI Data Repository, NASA Glenn Combustion Science, NASA investigation fact sheets and <em>A Researcher's Guide to ISS Combustion Science</em>. Each record links to its source.", "Создано для NASA Space Apps Challenge 2026, задача «Flame in Freefall». Данные отобраны из открытых источников NASA: репозиторий PSI, NASA Glenn Combustion Science, информационные листы экспериментов и <em>A Researcher's Guide to ISS Combustion Science</em>. Каждая запись ссылается на свой источник.", "NASA Space Apps Challenge 2026, “Flame in Freefall” musobaqasi uchun yaratilgan. Ma'lumotlar NASA'ning ochiq manbalaridan olingan: PSI repozitoriysi, NASA Glenn Combustion Science, tajribalar ma'lumotnomalari va <em>A Researcher's Guide to ISS Combustion Science</em>. Har bir yozuv o'z manbasiga havola qiladi."],
     "footer.2": ["The Fire Risk Explorer is a transparent, physics-informed screening model for exploring trends. It is not a substitute for NASA-STD-6001 material certification.", "Оценка пожарного риска — прозрачная физическая модель для изучения тенденций. Она не заменяет сертификацию материалов по NASA-STD-6001.", "Yong'in xavfi tahlili tendensiyalarni o'rganish uchun ochiq, fizikaga asoslangan model. U NASA-STD-6001 bo'yicha materiallarni sertifikatlashning o'rnini bosmaydi."],
@@ -30,16 +30,16 @@
     "u.kpa": ["kPa", "кПа", "kPa"],
     "u.cms": ["cm/s", "см/с", "sm/s"],
     "u.cm": ["cm", "см", "sm"],
-    "top.home": ["EMBER home", "EMBER, главная", "EMBER bosh sahifa"],
+    "top.home": ["SARDOR home", "SARDOR, главная", "SARDOR bosh sahifa"],
     "top.sections": ["Sections", "Разделы", "Bo'limlar"],
     "dr.closeAria": ["Close", "Закрыть", "Yopish"],
 
     // overview
     "ov.eyebrow": ["NASA Space Apps 2026 · Flame in Freefall", "NASA Space Apps 2026 · Flame in Freefall", "NASA Space Apps 2026 · Flame in Freefall"],
-    "ov.h1": ["Fire behaves differently off Earth. <em>EMBER</em> shows what NASA has learned, and what it means for the Moon and Mars.", "Вне Земли огонь ведёт себя иначе. <em>EMBER</em> показывает, что узнало NASA и что это значит для Луны и Марса.", "Yerdan tashqarida olov boshqacha yonadi. <em>EMBER</em> NASA nimalarni o'rganganini va bu Oy hamda Mars uchun nimani anglatishini ko'rsatadi."],
-    "ov.lede": ["{n} NASA combustion investigations, from Shuttle flame balls to Saffire's spacecraft-scale fires, curated into one searchable atlas. EMBER ranks them for your mission, maps where the evidence is thin, estimates material flammability in habitat atmospheres, and answers questions with cited sources.", "{n} исследований горения NASA — от «огненных шаров» на шаттле до пожаров масштаба корабля в Saffire — собраны в один атлас с поиском. EMBER ранжирует их для вашей миссии, показывает, где данных мало, оценивает горючесть материалов в атмосфере жилых модулей и отвечает на вопросы со ссылками на источники.", "NASA'ning {n} ta yonish tadqiqoti, shattldagi “olov sharlari”dan tortib Saffire'ning kema miqyosidagi yong'inlarigacha, bitta qidiruvli atlasga jamlangan. EMBER ularni missiyangiz uchun tartiblaydi, dalillar kam joylarni ko'rsatadi, yashash modullari atmosferasida materiallar yonuvchanligini baholaydi va savollarga manbalar bilan javob beradi."],
+    "ov.h1": ["Fire behaves differently off Earth. <em>SARDOR</em> shows what NASA has learned, and what it means for the Moon and Mars.", "Вне Земли огонь ведёт себя иначе. <em>SARDOR</em> показывает, что узнало NASA и что это значит для Луны и Марса.", "Yerdan tashqarida olov boshqacha yonadi. <em>SARDOR</em> NASA nimalarni o'rganganini va bu Oy hamda Mars uchun nimani anglatishini ko'rsatadi."],
+    "ov.lede": ["{n} NASA combustion investigations, from Shuttle flame balls to Saffire's spacecraft-scale fires, curated into one searchable atlas. SARDOR ranks them for your mission, maps where the evidence is thin, estimates material flammability in habitat atmospheres, and answers questions with cited sources.", "{n} исследований горения NASA — от «огненных шаров» на шаттле до пожаров масштаба корабля в Saffire — собраны в один атлас с поиском. SARDOR ранжирует их для вашей миссии, показывает, где данных мало, оценивает горючесть материалов в атмосфере жилых модулей и отвечает на вопросы со ссылками на источники.", "NASA'ning {n} ta yonish tadqiqoti, shattldagi “olov sharlari”dan tortib Saffire'ning kema miqyosidagi yong'inlarigacha, bitta qidiruvli atlasga jamlangan. SARDOR ularni missiyangiz uchun tartiblaydi, dalillar kam joylarni ko'rsatadi, yashash modullari atmosferasida materiallar yonuvchanligini baholaydi va savollarga manbalar bilan javob beradi."],
     "ov.btnRisk": ["Explore fire risk for {s}", "Оценить риск пожара: {s}", "Yong'in xavfini baholash: {s}"],
-    "ov.btnAsk": ["Ask EMBER", "Спросить EMBER", "EMBER'dan so'rash"],
+    "ov.btnAsk": ["Ask SARDOR", "Спросить SARDOR", "SARDOR'dan so'rash"],
     "ov.btnMap": ["See the evidence map", "Открыть карту данных", "Dalillar xaritasini ko'rish"],
     "ov.flame1": ["1 g · buoyancy pulls air up<br>tall, yellow, sooty", "1 g · подъёмная сила тянет воздух вверх<br>высокое, жёлтое, коптящее", "1 g · ko'tarilish kuchi havoni yuqoriga tortadi<br>baland, sariq, qurumli"],
     "ov.flame2": ["Microgravity · diffusion only<br>dim blue sphere", "Микрогравитация · только диффузия<br>тусклая голубая сфера", "Mikrogravitatsiya · faqat diffuziya<br>xira ko'k shar"],
@@ -124,7 +124,7 @@
     "layer.prevention": ["Prevention", "Профилактика", "Oldini olish"],
     "layer.detection": ["Detection", "Обнаружение", "Aniqlash"],
     "layer.suppression": ["Suppression", "Тушение", "O'chirish"],
-    "eng.offline": ["EMBER offline reasoner", "Офлайн-модуль EMBER", "EMBER oflayn tahlilchisi"],
+    "eng.offline": ["SARDOR offline reasoner", "Офлайн-модуль SARDOR", "SARDOR oflayn tahlilchisi"],
     "eng.claude": ["Claude", "Claude", "Claude"],
     "eng.confidence": ["confidence", "достоверность", "ishonchlilik"],
 
@@ -150,7 +150,7 @@
 
     // risk
     "rk.title": ["Fire Risk Explorer", "Оценка пожарного риска", "Yong'in xavfi tahlili"],
-    "rk.desc": ["Choose an atmosphere, gravity level, ventilation speed and material. EMBER estimates whether a flame can spread, shows the evidence behind the estimate, and flags where no flight data exists yet.", "Выберите атмосферу, гравитацию, скорость вентиляции и материал. EMBER оценит, может ли распространяться пламя, покажет данные, на которых основана оценка, и отметит, где лётных данных ещё нет.", "Atmosfera, gravitatsiya, ventilyatsiya tezligi va materialni tanlang. EMBER alanga tarqala oladimi yoki yo'qligini baholaydi, bahoning asosidagi dalillarni ko'rsatadi va parvoz ma'lumotlari hali yo'q joylarni belgilaydi."],
+    "rk.desc": ["Choose an atmosphere, gravity level, ventilation speed and material. SARDOR estimates whether a flame can spread, shows the evidence behind the estimate, and flags where no flight data exists yet.", "Выберите атмосферу, гравитацию, скорость вентиляции и материал. SARDOR оценит, может ли распространяться пламя, покажет данные, на которых основана оценка, и отметит, где лётных данных ещё нет.", "Atmosfera, gravitatsiya, ventilyatsiya tezligi va materialni tanlang. SARDOR alanga tarqala oladimi yoki yo'qligini baholaydi, bahoning asosidagi dalillarni ko'rsatadi va parvoz ma'lumotlari hali yo'q joylarni belgilaydi."],
     "rk.material": ["Material", "Материал", "Material"],
     "rk.oxygen": ["Oxygen", "Кислород", "Kislorod"],
     "rk.pressure": ["Pressure", "Давление", "Bosim"],
@@ -229,8 +229,8 @@
     "rn.contrib": ["Score contributions", "Вклад в оценку", "Ballga hissa"],
 
     // ask
-    "ask.title": ["Ask EMBER", "Спросить EMBER", "EMBER'dan so'rash"],
-    "ask.desc": ["Ask in plain language. EMBER retrieves evidence from the curated NASA record, runs the flammability model when you mention a material or atmosphere, and answers with citations, a confidence level and research-gap warnings.", "Спрашивайте простым языком. EMBER находит данные в отобранных материалах NASA, запускает модель горючести, если вы упоминаете материал или атмосферу, и отвечает со ссылками, оценкой достоверности и предупреждениями о пробелах в исследованиях.", "Oddiy tilda so'rang. EMBER NASA ma'lumotlaridan dalil topadi, material yoki atmosferani tilga olsangiz yonuvchanlik modelini ishga tushiradi va manbalar, ishonchlilik darajasi hamda tadqiqot bo'shliqlari haqida ogohlantirish bilan javob beradi."],
+    "ask.title": ["Ask SARDOR", "Спросить SARDOR", "SARDOR'dan so'rash"],
+    "ask.desc": ["Ask in plain language. SARDOR retrieves evidence from the curated NASA record, runs the flammability model when you mention a material or atmosphere, and answers with citations, a confidence level and research-gap warnings.", "Спрашивайте простым языком. SARDOR находит данные в отобранных материалах NASA, запускает модель горючести, если вы упоминаете материал или атмосферу, и отвечает со ссылками, оценкой достоверности и предупреждениями о пробелах в исследованиях.", "Oddiy tilda so'rang. SARDOR NASA ma'lumotlaridan dalil topadi, material yoki atmosferani tilga olsangiz yonuvchanlik modelini ishga tushiradi va manbalar, ishonchlilik darajasi hamda tadqiqot bo'shliqlari haqida ogohlantirish bilan javob beradi."],
     "ask.checking": ["Checking AI engine…", "Проверяем AI-движок…", "AI tizimi tekshirilmoqda…"],
     "ask.placeholder": ["e.g. How should we suppress a fabric fire in a lunar habitat?", "напр. Как тушить возгорание ткани в лунном модуле?", "masalan: Oy modulida mato yong'inini qanday o'chirish kerak?"],
     "ask.aria": ["Your question", "Ваш вопрос", "Savolingiz"],
@@ -241,7 +241,7 @@
     "ask.how2": ["With an AI model online (Claude, or OpenAI as a low-cost option), the passages and any model output go to it with strict instructions to answer only from them and cite every claim.", "Когда AI-модель доступна (Claude или недорогой OpenAI), фрагменты и результат модели передаются ей со строгим указанием отвечать только по ним и ссылаться на каждое утверждение.", "AI modeli ulangan bo'lsa (Claude yoki arzon variant sifatida OpenAI), parchalar va model natijasi unga faqat ular asosida javob berish va har bir da'voga manba ko'rsatish sharti bilan yuboriladi."],
     "ask.how3": ["Offline, a local reasoner builds the answer from the same evidence, the flammability model and the mission ranker.", "Без сети локальный модуль строит ответ по тем же данным, модели горючести и рейтингу миссии.", "Oflayn rejimda mahalliy tahlilchi javobni xuddi shu dalillar, yonuvchanlik modeli va missiya reytingi asosida tuzadi."],
     "ask.how4": ["Every answer shows the evidence confidence and the data gaps it touches.", "Каждый ответ показывает достоверность данных и затронутые пробелы.", "Har bir javob dalillar ishonchliligini va tegishli bo'shliqlarni ko'rsatadi."],
-    "ask.hello": ["Hello. I'm EMBER. I know {n} NASA combustion investigations and the current mission context: **{s}**. Ask about materials, oxygen levels, detection, suppression or any investigation.", "Здравствуйте, я EMBER. Я знаю {n} исследований горения NASA и текущую миссию: **{s}**. Спрашивайте о материалах, уровне кислорода, обнаружении, тушении или любом исследовании.", "Salom, men EMBER. Men NASA'ning {n} ta yonish tadqiqotini va joriy missiyani bilaman: **{s}**. Materiallar, kislorod darajasi, aniqlash, o'chirish yoki istalgan tadqiqot haqida so'rang."],
+    "ask.hello": ["Hello. I'm SARDOR. I know {n} NASA combustion investigations and the current mission context: **{s}**. Ask about materials, oxygen levels, detection, suppression or any investigation.", "Здравствуйте, я SARDOR. Я знаю {n} исследований горения NASA и текущую миссию: **{s}**. Спрашивайте о материалах, уровне кислорода, обнаружении, тушении или любом исследовании.", "Salom, men SARDOR. Men NASA'ning {n} ta yonish tadqiqotini va joriy missiyani bilaman: **{s}**. Materiallar, kislorod darajasi, aniqlash, o'chirish yoki istalgan tadqiqot haqida so'rang."],
     "ask.conf": ["confidence: {c}", "достоверность: {c}", "ishonchlilik: {c}"],
     "ask.gap": ["gap", "пробел", "bo'shliq"],
     "ask.error": ["Something went wrong: {e}. Please try again.", "Что-то пошло не так: {e}. Попробуйте ещё раз.", "Xatolik yuz berdi: {e}. Qaytadan urinib ko'ring."],
@@ -255,11 +255,11 @@
     "v.listening": ["Listening… tap the microphone to stop", "Слушаю… нажмите на микрофон, чтобы остановить", "Tinglayapman… to'xtatish uchun mikrofonni bosing"],
     "v.transcribing": ["Recognising speech…", "Распознаю речь…", "Nutq aniqlanmoqda…"],
     "v.readAloud": ["Read answers aloud (short answer, key action first)", "Читать ответы вслух (кратко, сначала главное действие)", "Javoblarni ovoz chiqarib o'qish (qisqa, avval asosiy chora)"],
-    "v.wake": ["Hands-free: say “Hey EMBER”, then your question", "Без рук: скажите «Эй, EMBER» и задайте вопрос", "Qo'lsiz: “Hey EMBER” deng, keyin savolingizni ayting"],
-    "v.wakeOn": ["Listening for “Hey EMBER”…", "Жду фразу «Эй, EMBER»…", "“Hey EMBER” so'zini kutyapman…"],
+    "v.wake": ["Hands-free: say “Hey SARDOR”, then your question", "Без рук: скажите «Эй, Сардор» и задайте вопрос", "Qo'lsiz: “Hey SARDOR” deng, keyin savolingizni ayting"],
+    "v.wakeOn": ["Listening for “Hey SARDOR”…", "Жду фразу «Эй, Сардор»…", "“Hey SARDOR” so'zini kutyapman…"],
     "v.wakeHeard": ["Yes? Ask your question.", "Да? Задайте вопрос.", "Ha? Savolingizni bering."],
     "v.wakeUnsupported": ["Hands-free mode needs Chrome or Edge.", "Режим «без рук» работает в Chrome или Edge.", "Qo'lsiz rejim Chrome yoki Edge'da ishlaydi."],
-    "v.wakeMiss": ["Heard “{s}”. Start with “Hey EMBER” to ask.", "Услышано: «{s}». Чтобы спросить, начните с «Эй, Эмбер».", "Eshitildi: “{s}”. Savol berish uchun “Hey EMBER” deb boshlang."],
+    "v.wakeMiss": ["Heard “{s}”. Start with “Hey SARDOR” to ask.", "Услышано: «{s}». Чтобы спросить, начните с «Эй, Сардор».", "Eshitildi: “{s}”. Savol berish uchun “Hey SARDOR” deb boshlang."],
     "v.engOpenAI": ["Voice: OpenAI speech recognition and natural voice", "Голос: распознавание речи и естественный голос OpenAI", "Ovoz: OpenAI nutqni aniqlash va tabiiy ovoz"],
     "v.engBrowser": ["Voice: built-in browser speech (best in Chrome or Edge)", "Голос: встроенная речь браузера (лучше всего в Chrome или Edge)", "Ovoz: brauzerning o'z nutq tizimi (Chrome yoki Edge'da yaxshi ishlaydi)"],
     "v.engNone": ["This browser has no speech recognition. Typing still works; use Chrome or Edge for voice.", "В этом браузере нет распознавания речи. Ввод текстом работает; для голоса используйте Chrome или Edge.", "Bu brauzerda nutqni aniqlash yo'q. Yozib so'rash ishlaydi; ovoz uchun Chrome yoki Edge'dan foydalaning."],
@@ -274,7 +274,7 @@
     "v.langName": ["English", "русский", "o'zbek"],
 
     // emergency quick commands (training guidance, cited to the curated evidence)
-    "em.note": ["Training guidance built from the NASA evidence in EMBER, not an official NASA procedure.", "Учебная памятка на основе данных NASA в EMBER, а не официальная процедура NASA.", "EMBER'dagi NASA dalillari asosida tuzilgan o'quv yo'riqnomasi, NASA'ning rasmiy tartibi emas."],
+    "em.note": ["Training guidance built from the NASA evidence in SARDOR, not an official NASA procedure.", "Учебная памятка на основе данных NASA в SARDOR, а не официальная процедура NASA.", "SARDOR'dagi NASA dalillari asosida tuzilgan o'quv yo'riqnomasi, NASA'ning rasmiy tartibi emas."],
     "em.fireTitle": ["**Fire: immediate actions**", "**Пожар: срочные действия**", "**Yong'in: zudlik bilan bajariladigan choralar**"],
     "em.fire1": ["Sound the alarm and alert the crew.", "Подайте сигнал тревоги и предупредите экипаж.", "Signal bering va ekipajni ogohlantiring."],
     "em.fire2": ["Turn the ventilation off: without airflow a microgravity flame is starved of oxygen [SSCE] [INSIGHT-7].", "Отключите вентиляцию: без потока воздуха пламени в микрогравитации не хватает кислорода [SSCE] [INSIGHT-7].", "Ventilyatsiyani o'chiring: havo oqimisiz mikrogravitatsiyada alangaga kislorod yetmaydi [SSCE] [INSIGHT-7]."],
@@ -350,7 +350,7 @@
     "cite.INSIGHT": ["insight", "вывод", "xulosa"],
     "cite.EARTH": ["Earth benefit", "польза для Земли", "Yer uchun foyda"],
     "cite.GENERAL": ["general knowledge, not NASA data", "общие знания, не данные NASA", "umumiy bilim, NASA ma'lumoti emas"],
-    "cite.GENERALtip": ["Not found in the NASA sources EMBER retrieved; general scientific knowledge, check before relying on it.", "Не найдено в источниках NASA, которые нашёл EMBER; это общие научные знания, проверьте перед использованием.", "EMBER topgan NASA manbalarida yo'q; bu umumiy ilmiy bilim, ishonishdan oldin tekshiring."],
+    "cite.GENERALtip": ["Not found in the NASA sources SARDOR retrieved; general scientific knowledge, check before relying on it.", "Не найдено в источниках NASA, которые нашёл SARDOR; это общие научные знания, проверьте перед использованием.", "SARDOR topgan NASA manbalarida yo'q; bu umumiy ilmiy bilim, ishonishdan oldin tekshiring."],
     "cite.NTRS": ["NASA report {y}", "отчёт NASA {y}", "NASA hisoboti {y}"],
     "ask.sources": ["NASA technical reports cited", "Цитируемые технические отчёты NASA", "Iqtibos keltirilgan NASA texnik hisobotlari"],
     "ask.searched": ["Live NTRS search: {n} NASA reports match “{q}”.", "Поиск в NTRS: {n} отчётов NASA по запросу «{q}».", "NTRS qidiruvi: “{q}” bo'yicha {n} ta NASA hisoboti topildi."],
@@ -358,7 +358,7 @@
     "kb.ntrs": ["Each AI answer also searches the NASA Technical Reports Server live: {mc} reports on microgravity combustion, {sf} on spacecraft fire, {fl} on flammability, {fs} on fire suppression and {sd} on smoke detection.", "Каждый ответ AI также ищет в NASA Technical Reports Server: {mc} отчётов о горении в микрогравитации, {sf} о пожарах на кораблях, {fl} о горючести, {fs} о пожаротушении и {sd} об обнаружении дыма.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi: mikrogravitatsiyada yonish bo'yicha {mc}, kemadagi yong'in bo'yicha {sf}, yonuvchanlik bo'yicha {fl}, yong'inni o'chirish bo'yicha {fs} va tutunni aniqlash bo'yicha {sd} ta hisobot."],
     "kb.ntrs3": ["Each AI answer also searches the NASA Technical Reports Server live: {mc} reports on microgravity combustion, {sf} on spacecraft fire and {fl} on flammability.", "Каждый ответ AI также ищет в NASA Technical Reports Server: {mc} отчётов о горении в микрогравитации, {sf} о пожарах на кораблях и {fl} о горючести.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi: mikrogravitatsiyada yonish bo'yicha {mc}, kemadagi yong'in bo'yicha {sf} va yonuvchanlik bo'yicha {fl} ta hisobot."],
     "kb.ntrsLive": ["Each AI answer also searches the NASA Technical Reports Server live.", "Каждый ответ AI также ищет в NASA Technical Reports Server.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi."],
-    "cite.MODEL": ["EMBER model", "модель EMBER", "EMBER modeli"],
+    "cite.MODEL": ["SARDOR model", "модель SARDOR", "SARDOR modeli"],
   };
 
   const SUGGEST = {
@@ -368,7 +368,7 @@
   };
 
   function detect() {
-    try { const s = JSON.parse(localStorage.getItem("ember:lang")); if (IDX.hasOwnProperty(s)) return s; } catch (e) { /* ignore */ }
+    try { const s = JSON.parse(localStorage.getItem("sardor:lang")); if (IDX.hasOwnProperty(s)) return s; } catch (e) { /* ignore */ }
     const n = ((typeof navigator !== "undefined" && navigator.language) || "en").toLowerCase();
     return n.startsWith("ru") ? "ru" : n.startsWith("uz") ? "uz" : "en";
   }
@@ -413,7 +413,7 @@
     if (!IDX.hasOwnProperty(lang)) lang = "en";
     if (!ORIG) snapshot();
     E.lang = lang;
-    try { localStorage.setItem("ember:lang", JSON.stringify(lang)); } catch (e) { /* ignore */ }
+    try { localStorage.setItem("sardor:lang", JSON.stringify(lang)); } catch (e) { /* ignore */ }
     if (typeof document !== "undefined") document.documentElement.lang = lang;
     const L = (E.L10N && E.L10N[lang]) || {};
     E.INVESTIGATIONS = overlay(clone(ORIG.INVESTIGATIONS), L.inv, (x) => x.id);

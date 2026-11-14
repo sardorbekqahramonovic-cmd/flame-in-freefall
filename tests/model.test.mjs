@@ -1,4 +1,4 @@
-// Sanity checks for the EMBER flammability model and ranker. Run: npm test
+// Sanity checks for the SARDOR flammability model and ranker. Run: npm test
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 globalThis.window = {};
@@ -11,7 +11,7 @@ require("../i18n.js");
 require("../model.js");
 require("../ai.js");
 require("../voice.js");
-const E = window.EMBER, M = E.model;
+const E = window.SARDOR, M = E.model;
 E.setLang("en");
 
 for (const m of E.MATERIALS) {
@@ -95,7 +95,7 @@ for (const [lang, fire, smoke, stop] of [["en", "Fire!", "smoke", "stop"], ["ru"
   }
 }
 E.setLang("en");
-console.log("All EMBER model and language checks passed.");
+console.log("All SARDOR model and language checks passed.");
 
 // Uzbek speech text: digits, units and acronyms are read as Uzbek words
 {
@@ -121,7 +121,8 @@ console.log("All EMBER model and language checks passed.");
   E.setLang("en");
 }
 // wake word spellings the recognisers produce
-for (const said of ["Hey Ember", "Xey Amber, savol", "Emberga", "Эй, Эмбер", "hey M1", "M1 marsda", "m 1", "M-1", "em bir", "hey Em1", "M one"]) assert.ok(E.voice.WAKE_RX.test(said), `wake: ${said}`);
-for (const said of ["remember", "chamber", "M10", "members"]) assert.ok(!E.voice.WAKE_RX.test(said), `not wake: ${said}`);
+for (const said of ["Hey Sardor", "hey sardor what is BASS", "Xey Sardor, savol", "Sardorga", "Salom Sardor", "Эй, Сардор", "сардор", "Hey Sardar", "ok sarder"]) assert.ok(E.voice.WAKE_RX.test(said), `wake: ${said}`);
+for (const said of ["Sardorbekov", "sardine", "hey ember", "M1"]) assert.ok(!E.voice.WAKE_RX.test(said), `not wake: ${said}`);
+assert.equal(E.voice.speechText("SARDOR says", "en"), "Sardor says");
 console.log("Uzbek speech text checks passed.");
 

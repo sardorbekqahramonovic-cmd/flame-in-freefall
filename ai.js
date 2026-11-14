@@ -1,5 +1,5 @@
 /*
- * EMBER AI layer.
+ * SARDOR AI layer.
  * Online: retrieval-augmented answers from Claude through the /api/ask serverless
  * function (API key stays on the server).
  * Offline: a local reasoner that answers from the same retrieved evidence, runs the
@@ -7,8 +7,8 @@
  * carries a citation chip back to its investigation.
  */
 (function () {
-  const E = window.EMBER;
-  const API = (window.EMBER_CONFIG && window.EMBER_CONFIG.apiUrl) || "api/ask";
+  const E = window.SARDOR;
+  const API = (window.SARDOR_CONFIG && window.SARDOR_CONFIG.apiUrl) || "api/ask";
   const indexes = {}; // one retrieval index per interface language
   let online = null; // null = unknown, false, or { model }
   const t = (k, v) => E.t(k, v);
@@ -267,7 +267,7 @@
     const contexts = hits.map((h) => ({ id: h.c.inv || h.c.id, title: h.c.title, text: h.c.text }));
     if (cond) {
       const a = E.model.assess(cond);
-      contexts.unshift({ id: "MODEL", title: "EMBER flammability model output", text: `Material ${a.material.label} (1-g LOI ${a.material.loi}%), ${cond.o2}% O2, ${cond.p.toFixed(1)} kPa, gravity ${cond.g} g, ventilation ${cond.vent} cm/s. Estimated limiting O2 ${a.loc.toFixed(1)}%, margin ${a.margin.toFixed(1)} points, state "${a.state}". Effective flow ${a.uEff.toFixed(1)} cm/s. Evidence coverage ${a.coverage.level}: ${a.coverage.note} ${a.coverage.flags.join(" ")}` });
+      contexts.unshift({ id: "MODEL", title: "SARDOR flammability model output", text: `Material ${a.material.label} (1-g LOI ${a.material.loi}%), ${cond.o2}% O2, ${cond.p.toFixed(1)} kPa, gravity ${cond.g} g, ventilation ${cond.vent} cm/s. Estimated limiting O2 ${a.loc.toFixed(1)}%, margin ${a.margin.toFixed(1)} points, state "${a.state}". Effective flow ${a.uEff.toFixed(1)} cm/s. Evidence coverage ${a.coverage.level}: ${a.coverage.note} ${a.coverage.flags.join(" ")}` });
     }
     const r = await fetch(API, {
       method: "POST",

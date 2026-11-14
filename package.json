@@ -1,8 +1,8 @@
 {
-  "name": "ember-fire-safety-atlas",
+  "name": "sardor-fire-safety-atlas",
   "version": "1.0.0",
   "private": true,
-  "description": "EMBER: NASA microgravity combustion findings ranked and interpreted for Moon and Mars fire safety (NASA Space Apps 2026, Flame in Freefall).",
+  "description": "SARDOR: NASA microgravity combustion findings ranked and interpreted for Moon and Mars fire safety (NASA Space Apps 2026, Flame in Freefall).",
   "type": "module",
   "scripts": {
     "start": "python3 -m http.server 8080",

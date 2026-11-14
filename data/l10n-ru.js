@@ -1,9 +1,9 @@
-/* EMBER content in Russian. Missing fields fall back to English (see i18n.js).
+/* SARDOR content in Russian. Missing fields fall back to English (see i18n.js).
  * Investigation names, ids, numbers and NASA source titles are not translated. */
-window.EMBER = window.EMBER || {};
-window.EMBER.L10N = window.EMBER.L10N || {};
+window.SARDOR = window.SARDOR || {};
+window.SARDOR.L10N = window.SARDOR.L10N || {};
 
-window.EMBER.L10N.ru = {
+window.SARDOR.L10N.ru = {
   cat: {
     solid: "Твёрдые материалы",
     droplet: "Капли жидкости",

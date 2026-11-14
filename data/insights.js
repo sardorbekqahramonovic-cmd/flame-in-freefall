@@ -1,9 +1,9 @@
 /* Ranked fire-safety insights synthesised from the curated investigations.
  * rank = safety impact for Moon/Mars missions (curator judgement, explained in `why`).
  * cites = investigation ids that support the insight. */
-window.EMBER = window.EMBER || {};
+window.SARDOR = window.SARDOR || {};
 
-window.EMBER.INSIGHTS = [
+window.SARDOR.INSIGHTS = [
   {
     rank: 1,
     title: "Earth flammability tests are not always conservative in microgravity",
@@ -97,7 +97,7 @@ window.EMBER.INSIGHTS = [
 ];
 
 /* Short physics primer used by the AI assistant */
-window.EMBER.PRIMER = [
+window.SARDOR.PRIMER = [
   { title: "Why flames are spherical and blue in microgravity", text: "On Earth, hot gas rises and pulls in fresh air, which makes a candle flame tall and yellow with soot. In microgravity there is no buoyancy, so oxygen reaches the flame only by slow diffusion or by ventilation. A candle flame becomes a dim, roughly spherical blue flame." },
   { title: "Opposed and concurrent flame spread", text: "Opposed flow blows against the direction of flame spread; concurrent flow blows with it. In spacecraft both happen, because ventilation, not buoyancy, sets the flow direction. Concurrent spread is usually faster and is the condition Saffire tested at large scale." },
   { title: "Flammability limits and the U-shaped boundary", text: "For thin solids in microgravity, the minimum oxygen needed to burn depends on flow speed. At very low flow the flame starves of oxygen (quenching); at high flow it blows off. In between, at a few to tens of cm/s, the limit is lowest and materials are most flammable." },

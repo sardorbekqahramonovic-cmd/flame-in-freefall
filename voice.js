@@ -1,13 +1,13 @@
 /*
- * EMBER voice: speech in, speech out.
+ * SARDOR voice: speech in, speech out.
  * - With OPENAI_API_KEY on the server (/api/voice): recorded speech goes to OpenAI speech
  *   recognition, answers are read with an OpenAI voice. Best quality, works for Uzbek too.
  * - Otherwise: the browser's Web Speech API (SpeechRecognition + speechSynthesis), free.
- * - "Hey EMBER" wake word always uses the browser recogniser, so listening for it costs nothing.
+ * - "Hey SARDOR" wake word always uses the browser recogniser, so listening for it costs nothing.
  */
 (function () {
-  const E = window.EMBER;
-  const API = (window.EMBER_CONFIG && window.EMBER_CONFIG.voiceUrl) || "api/voice";
+  const E = window.SARDOR;
+  const API = (window.SARDOR_CONFIG && window.SARDOR_CONFIG.voiceUrl) || "api/voice";
   const BCP = { en: "en-US", ru: "ru-RU", uz: "uz-UZ" };
   const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
   let server = null; // null = unknown, false, or { stt, tts }
@@ -214,7 +214,7 @@
     t = t.replace(/([oOgG])['’‘`ʻ]/g, "$1ʻ").replace(/(\p{L})['’‘`](\p{L})/gu, "$1ʼ$2");
     return t.replace(/\s{2,}/g, " ").replace(/\s+([.,;:!?])/g, "$1").replace(/,([.,;:!?])/g, "$1").replace(/^[,\s]+|[,\s]+$/g, "").trim();
   }
-  const speechText = (text, lang) => (lang === "uz" ? uzSpeech(text) : String(text || "")).trim().slice(0, 700);
+  const speechText = (text, lang) => (lang === "uz" ? uzSpeech(text) : String(text || "")).replace(/\bSARDOR\b/g, "Sardor").trim().slice(0, 700);
 
   // A native voice installed in the browser (Edge has Uzbek Microsoft voices) beats an English-trained one.
   async function nativeVoice(lang) {
@@ -261,11 +261,11 @@
     return { spoken: true };
   }
 
-  /* ---------- "Hey EMBER" wake word (browser recogniser, free) ----------
-   * Recognisers spell the name many ways ("Amber", "Xey Ember", "Emberga", "эмбер"), so the pattern is loose.
-   * The Uzbek recogniser hears "Ember" as "em bir" and writes "M1" (bir = one).
-   * Every alternative the recogniser offers is checked. A watchdog restarts listening if Chrome drops it. */
-  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:ember|embər|emb[aeiəы]r|amber|ambar|imber|embr|e?m\s?[-‑]?\s?(?:1|bir|one)|эмбер|эмбэр|эмбар|амбер|эмбр|эм\s?1)(?:ga|jon|га)?(?![\p{L}\d])[\s,.!?]*/iu;
+  /* ---------- "Hey SARDOR" wake word (browser recogniser, free) ----------
+   * Sardor is a common Uzbek name, so the Uzbek and Russian recognisers spell it reliably; English ones
+   * may write "Sardar" or "Sarder". Every alternative the recogniser offers is checked, and a watchdog
+   * restarts listening if Chrome drops it. */
+  const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:s[ae]rd[aoe]r|sardo|сард[оа]р)(?:ga|jon|bek|га|жон)?(?![\p{L}\d])[\s,.!?]*/iu;
   let wake = null; // { rec, live, paused, on, timer, begin, drop }
 
   function startWake(lang, onWake, onHeard) {

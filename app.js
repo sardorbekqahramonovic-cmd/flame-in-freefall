@@ -1,6 +1,6 @@
-/* EMBER UI */
+/* SARDOR UI */
 (function () {
-  const E = window.EMBER;
+  const E = window.SARDOR;
   const M = E.model;
   const t = (k, v) => E.t(k, v);
   const fmt = (v) => E.fmt(v);
@@ -11,8 +11,8 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const store = {
-    get(k, d) { try { const v = localStorage.getItem("ember:" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem("ember:" + k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
+    get(k, d) { try { const v = localStorage.getItem("sardor:" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("sardor:" + k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
   };
   const psia = (kpa) => n1(kpa / 6.895);
   const range = (a, approx, unit = "") => `${approx ? "≈" : ""}${a[0] === a[1] ? fmt(a[0]) : fmt(a[0]) + "–" + fmt(a[1])}${unit}`;
@@ -29,7 +29,7 @@
     chat: [],
     mapCats: Object.keys(E.CATEGORIES),
     voiceMode: store.get("voiceMode", false), // read answers aloud, short answers
-    wake: false, // "Hey EMBER" hands-free listening (needs a click to start, never persisted)
+    wake: false, // "Hey SARDOR" hands-free listening (needs a click to start, never persisted)
   };
   const scenario = () => E.SCENARIOS.find((s) => s.id === state.scenario) || E.SCENARIOS[0];
 
@@ -765,7 +765,7 @@
     if (!on) { el.innerHTML = base; return; }
     if (!corpus) {
       try {
-        const r = await fetch((window.EMBER_CONFIG && window.EMBER_CONFIG.corpusUrl) || "api/corpus");
+        const r = await fetch((window.SARDOR_CONFIG && window.SARDOR_CONFIG.corpusUrl) || "api/corpus");
         corpus = r.ok ? (await r.json()).ntrs || {} : {};
       } catch (e) { corpus = {}; }
     }
