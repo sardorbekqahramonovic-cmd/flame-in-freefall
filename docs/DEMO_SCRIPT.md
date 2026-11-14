@@ -19,7 +19,7 @@ Space Apps asks for a short project demo video. Check the current Project Submis
 3. **Map (0:40–1:00).** "Here is the insight a table can't give you: almost every test sits at 21% oxygen and one atmosphere. The exploration atmosphere, 34% at 8.2 psia, is covered only by Saffire IV–VI and SoFIE."
 4. **Risk Explorer (1:00–1:25).** Nomex at ISS air shows "Self-extinguishing"; switch to the rover preset and it shows "Flammable". Point at the Moon marker on the curve and the gravity table. "Lunar gravity creates gentle buoyant flow, close to the speed where materials burn most easily, so the Moon could be a worst case. EMBER flags this clearly as an extrapolation, because no partial-gravity data exists yet. That is why FM2 matters."
 5. **Ask EMBER (1:25–1:45).** Ask "Is Nomex flammable at 34% oxygen and 8.2 psi on the Moon?" Show the model numbers, citations, the confidence badge and the gap warnings.
-6. **Impact (1:45–2:00).** Ranker and Gaps view. "Researchers find answers in minutes. Engineers get concrete actions: correct Earth tests, re-screen fabrics, size extinguishers, detect sub-micron smoke. And it runs offline, in any browser."
+6. **Impact (1:45–2:00).** Ranker and Gaps view. "Researchers find answers in minutes. Engineers get concrete actions: correct Earth tests, re-screen fabrics, size extinguishers, detect sub-micron smoke. And it runs offline, in any browser." Click **UZ**, then **RU** in the top bar: "The whole dashboard, and the AI's answers, also work in Uzbek and Russian."
 
 ## Recording tips
 

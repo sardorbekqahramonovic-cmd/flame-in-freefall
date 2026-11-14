@@ -17,7 +17,19 @@ Rules:
 - PSI holds no partial-gravity (Moon or Mars) combustion data. When the question involves the Moon or Mars, say that results are extrapolated from microgravity and 1 g data.
 - Rocket and propellant fires are out of scope.
 - Structure: a one-sentence direct answer first, then 2-5 short bullet points starting with "- ", then one line starting with "**Recommended action:**" when an action follows from the evidence.
-- Plain English, under 220 words. Use **bold** sparingly. No headings, no tables.`;
+- Plain language, under 220 words. Use **bold** sparingly. No headings, no tables.`;
+
+// The interface language chosen in the browser. Evidence passages arrive in that
+// language; investigation names, ids, units and numbers stay as they are.
+const LANGS = {
+  en: { name: "English", refusal: "I can't answer that one. Try asking about a specific investigation, material or fire-safety topic." },
+  ru: { name: "Russian", refusal: "На этот вопрос я ответить не могу. Спросите о конкретном исследовании, материале или теме пожарной безопасности." },
+  uz: { name: "Uzbek (Latin script)", refusal: "Bu savolga javob bera olmayman. Muayyan tadqiqot, material yoki yong'in xavfsizligi mavzusi haqida so'rang." },
+};
+function systemFor(lang) {
+  const L = LANGS[lang] || LANGS.en;
+  return `${SYSTEM}\n- Write the whole answer in ${L.name}, including the "**Recommended action:**" label. Keep investigation names, passage ids in brackets, units and numbers unchanged.`;
+}
 
 function clean(s, max) {
   return String(s ?? "").replace(/[\u0000-\u0008\u000b-\u001f]/g, " ").slice(0, max);
@@ -36,6 +48,7 @@ export default async function handler(req, res) {
   const sc = body.scenario || {};
   const contexts = Array.isArray(body.contexts) ? body.contexts.slice(0, 12) : [];
   const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
+  const lang = Object.prototype.hasOwnProperty.call(LANGS, body.lang) ? body.lang : "en";
 
   const evidence = contexts
     .map((c) => `<passage id="${clean(c.id, 40)}" title="${clean(c.title, 120)}">\n${clean(c.text, 1500)}\n</passage>`)
@@ -60,11 +73,11 @@ export default async function handler(req, res) {
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "low" },
-      system: SYSTEM,
+      system: systemFor(lang),
       messages,
     });
     if (response.stop_reason === "refusal") {
-      return res.status(200).json({ answer: "I can't answer that one. Try asking about a specific investigation, material or fire-safety topic.", model: response.model });
+      return res.status(200).json({ answer: LANGS[lang].refusal, model: response.model });
     }
     const answer = response.content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
     return res.status(200).json({ answer, model: response.model });

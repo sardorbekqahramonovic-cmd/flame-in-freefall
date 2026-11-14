@@ -14,6 +14,7 @@ EMBER turns decades of NASA microgravity combustion experiments into ranked, exp
 | **Fire Risk Explorer** | A transparent, physics-informed screening model: choose material, O₂, pressure, gravity and ventilation, and see whether a flame can spread, the margin to the limit, a limiting-O₂-vs-flow curve with Moon / Mars / Earth markers, and which flight data supports the estimate. |
 | **Mission Ranker** | Scores every investigation for the mission with adjustable weights (atmosphere match, hazard relevance, fire scale, data richness, recency) and explains each score. |
 | **Ask EMBER** | Natural-language Q&A. BM25 retrieval over 139 evidence passages, then Claude answers only from those passages with citations. Offline, a local reasoner answers from the same evidence, runs the model and the ranker, and flags research gaps. |
+| **EN / RU / UZ** | The whole interface and the curated content (investigations, insights, gaps, history, atmospheres, materials) are available in English, Russian and Uzbek. The switch is in the top bar and is remembered per browser. Ask EMBER retrieves evidence in the chosen language, parses questions written in any of the three, and Claude answers in that language. |
 | **Gaps & Earth** | Ranked research gaps (partial gravity, exploration atmospheres, detection of cool flames…) linked to planned investigations, NASA spinoffs, and the full reference list. |
 
 ## Run it
@@ -26,7 +27,7 @@ python3 -m http.server 8080   # then open http://localhost:8080
 
 **Deploy with AI (Vercel):** import the repo in Vercel, add the environment variable `ANTHROPIC_API_KEY`, deploy. `api/ask.js` becomes a serverless function and the Ask EMBER panel switches to Claude automatically. Without a key (for example on GitHub Pages) the app runs fully with the offline reasoner.
 
-**Tests:** `npm test` checks the flammability model calibration, the physical trends it must reproduce, ranking integrity, citations and retrieval.
+**Tests:** `npm test` checks the flammability model calibration, the physical trends it must reproduce, ranking integrity, citations and retrieval, and that the Russian and Uzbek translations are complete and answer every suggested question.
 
 ## The flammability model (Fire Risk Explorer)
 
@@ -41,17 +42,18 @@ It reproduces the key flight trends: thin fuels self-extinguish in quiescent mic
 
 ## Data
 
-All records are curated from public NASA sources and link back to them: the [PSI Data Repository](https://psi.nasa.gov/physci/repo/search?q=combustion), [NASA Glenn Combustion Science](https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/), NASA investigation fact sheets, and [A Researcher's Guide to ISS Combustion Science](https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/). Values marked ≈ are curator estimates where the source gives no explicit range. Data lives in `data/investigations.js` and `data/insights.js`, so adding an investigation means adding one object.
+All records are curated from public NASA sources and link back to them: the [PSI Data Repository](https://psi.nasa.gov/physci/repo/search?q=combustion), [NASA Glenn Combustion Science](https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/), NASA investigation fact sheets, and [A Researcher's Guide to ISS Combustion Science](https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/). Values marked ≈ are curator estimates where the source gives no explicit range. Data lives in `data/investigations.js` and `data/insights.js`, so adding an investigation means adding one object. Translations live in `data/l10n-ru.js` and `data/l10n-uz.js` (any field left out falls back to English), and interface strings in `i18n.js`.
 
 ## Project layout
 
 ```
 index.html, styles.css   UI shell and design tokens (light and dark)
 app.js                   views, charts (hand-built SVG), drawer, chat UI
+i18n.js                  interface strings in EN / RU / UZ and the language switch
 model.js                 flammability model, mission ranker, BM25 retrieval
 ai.js                    Claude client + offline reasoner
 api/ask.js               serverless Claude endpoint (key stays server-side)
-data/                    curated investigations, atmospheres, materials, insights
+data/                    curated investigations, atmospheres, materials, insights, RU / UZ translations
 docs/                    submission text and demo video script
 tests/                   model checks
 ```

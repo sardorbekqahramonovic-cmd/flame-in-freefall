@@ -15,26 +15,31 @@
 <body>
 <header class="topbar">
   <div class="wrap">
-    <a class="brand" href="#overview" aria-label="EMBER home">
+    <a class="brand" href="#overview" aria-label="EMBER home" data-i18n-aria="top.home">
       <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="var(--flame)" stroke-opacity=".35"/><circle cx="16" cy="16" r="8.5" fill="var(--flame)" fill-opacity=".22"/><circle cx="16" cy="16" r="4.5" fill="var(--flame)"/></svg>
-      <span><span class="brand-name">EMBER</span><br><span class="brand-sub">Exploration Microgravity Burn Evidence Reasoner</span></span>
+      <span><span class="brand-name">EMBER</span><br><span class="brand-sub" data-i18n="brand.sub">Exploration Microgravity Burn Evidence Reasoner</span></span>
     </a>
     <div class="mission">
-      <label for="scenario">Mission</label>
+      <label for="scenario" data-i18n="top.mission">Mission</label>
       <select id="scenario"></select>
       <span class="atm-chip" id="atm-chip"></span>
-      <button class="icon-btn" id="theme-btn" type="button" aria-label="Toggle light or dark theme">◐</button>
+      <div class="lang-switch" id="lang-switch" role="group" aria-label="Interface language" data-i18n-aria="top.lang">
+        <button type="button" data-lang="en" lang="en" title="English">EN</button>
+        <button type="button" data-lang="ru" lang="ru" title="Русский">RU</button>
+        <button type="button" data-lang="uz" lang="uz" title="O'zbekcha">UZ</button>
+      </div>
+      <button class="icon-btn" id="theme-btn" type="button" aria-label="Toggle light or dark theme" data-i18n-aria="top.theme">◐</button>
     </div>
   </div>
   <div class="wrap">
-    <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" data-view="overview">Overview</button>
-      <button class="tab" role="tab" data-view="atlas">Investigation Atlas</button>
-      <button class="tab" role="tab" data-view="map">Flammability Map</button>
-      <button class="tab" role="tab" data-view="risk">Fire Risk Explorer</button>
-      <button class="tab" role="tab" data-view="rank">Mission Ranker</button>
-      <button class="tab" role="tab" data-view="ask">Ask EMBER</button>
-      <button class="tab" role="tab" data-view="gaps">Gaps &amp; Earth</button>
+    <nav class="tabs" role="tablist" aria-label="Sections" data-i18n-aria="top.sections">
+      <button class="tab" role="tab" data-view="overview" data-i18n="tab.overview">Overview</button>
+      <button class="tab" role="tab" data-view="atlas" data-i18n="tab.atlas">Investigation Atlas</button>
+      <button class="tab" role="tab" data-view="map" data-i18n="tab.map">Flammability Map</button>
+      <button class="tab" role="tab" data-view="risk" data-i18n="tab.risk">Fire Risk Explorer</button>
+      <button class="tab" role="tab" data-view="rank" data-i18n="tab.rank">Mission Ranker</button>
+      <button class="tab" role="tab" data-view="ask" data-i18n="tab.ask">Ask EMBER</button>
+      <button class="tab" role="tab" data-view="gaps" data-i18n="tab.gaps">Gaps &amp; Earth</button>
     </nav>
   </div>
 </header>
@@ -51,8 +56,8 @@
 
 <footer>
   <div class="wrap">
-    <p>Built for the NASA Space Apps Challenge 2026, “Flame in Freefall”. Data curated from public NASA sources: the PSI Data Repository, NASA Glenn Combustion Science, NASA investigation fact sheets and <em>A Researcher's Guide to ISS Combustion Science</em>. Each record links to its source.</p>
-    <p>The Fire Risk Explorer is a transparent, physics-informed screening model for exploring trends. It is not a substitute for NASA-STD-6001 material certification.</p>
+    <p data-i18n-html="footer.1">Built for the NASA Space Apps Challenge 2026, “Flame in Freefall”. Data curated from public NASA sources: the PSI Data Repository, NASA Glenn Combustion Science, NASA investigation fact sheets and <em>A Researcher's Guide to ISS Combustion Science</em>. Each record links to its source.</p>
+    <p data-i18n-html="footer.2">The Fire Risk Explorer is a transparent, physics-informed screening model for exploring trends. It is not a substitute for NASA-STD-6001 material certification.</p>
   </div>
 </footer>
 
@@ -61,6 +66,9 @@
 
 <script src="data/investigations.js"></script>
 <script src="data/insights.js"></script>
+<script src="data/l10n-ru.js"></script>
+<script src="data/l10n-uz.js"></script>
+<script src="i18n.js"></script>
 <script src="model.js"></script>
 <script src="ai.js"></script>
 <script src="app.js"></script>

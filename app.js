@@ -2,6 +2,11 @@
 (function () {
   const E = window.EMBER;
   const M = E.model;
+  const t = (k, v) => E.t(k, v);
+  const fmt = (v) => E.fmt(v);
+  const n1 = (v) => E.num(v, 1);
+  const KPA = () => " " + t("u.kpa"), CMS = () => " " + t("u.cms");
+  const lv = (level) => t("lv." + level);
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -9,8 +14,8 @@
     get(k, d) { try { const v = localStorage.getItem("ember:" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem("ember:" + k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
   };
-  const psia = (kpa) => (kpa / 6.895).toFixed(1);
-  const range = (a, approx, unit = "") => `${approx ? "≈" : ""}${a[0] === a[1] ? a[0] : a[0] + "–" + a[1]}${unit}`;
+  const psia = (kpa) => n1(kpa / 6.895);
+  const range = (a, approx, unit = "") => `${approx ? "≈" : ""}${a[0] === a[1] ? fmt(a[0]) : fmt(a[0]) + "–" + fmt(a[1])}${unit}`;
   const yearStr = (i) => `${i.approx && i.approx.years ? "≈" : ""}${i.years[0]}${i.years[1] !== i.years[0] ? "–" + i.years[1] : ""}`;
   const invById = (id) => E.INVESTIGATIONS.find((i) => i.id === id);
   const catPill = (c) => `<span class="pill" style="color:${E.CATEGORIES[c].color}">${esc(E.CATEGORIES[c].label)}</span>`;
@@ -47,7 +52,8 @@
         .replace(/\[([A-Za-z0-9\-#:]+)\]/g, (m, id) => {
           const base = id.split(/[#:]/)[0];
           if (invById(base)) return `<button class="cite" data-inv="${base}" type="button">${esc(invById(base).name)}</button>`;
-          const kind = { ATM: "atmosphere", GAP: "research gap", HIST: "history", PHYS: "physics", INSIGHT: "insight", EARTH: "Earth benefit", MODEL: "EMBER model" }[id.split("-")[0]] || id;
+          const pre = id.split("-")[0];
+          const kind = ["ATM", "GAP", "HIST", "PHYS", "INSIGHT", "EARTH", "MODEL"].includes(pre) ? t("cite." + pre) : id;
           return `<span class="cite" style="cursor:default">${esc(kind)}</span>`;
         });
       if (/^[-•]\s+/.test(l)) {
@@ -67,11 +73,35 @@
   });
 
   /* ---------------- top bar ---------------- */
-  function initTop() {
+  function fillScenarios() {
     const sel = $("#scenario");
     sel.innerHTML = E.SCENARIOS.map((s) => `<option value="${s.id}">${esc(s.label)}</option>`).join("");
     sel.value = state.scenario;
+  }
+  // static texts in index.html carry data-i18n (text), data-i18n-html (markup) or data-i18n-aria
+  function applyStatic() {
+    $$("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
+    $$("[data-i18n-html]").forEach((el) => (el.innerHTML = t(el.dataset.i18nHtml)));
+    $$("[data-i18n-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
+    $$("#lang-switch [data-lang]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lang === E.lang ? "true" : "false"));
+  }
+  function setLanguage(lang) {
+    if (lang === E.lang) return;
+    E.setLang(lang);
+    // views that keep their own DOM are rebuilt; the chat restarts in the new language
+    state.chat = [];
+    ["#view-atlas", "#view-ask"].forEach((sel) => delete $(sel).dataset.init);
+    $("#drawer-root").innerHTML = "";
+    fillScenarios();
+    applyStatic();
+    refreshAll();
+  }
+  function initTop() {
+    const sel = $("#scenario");
+    fillScenarios();
     sel.addEventListener("change", () => { state.scenario = sel.value; store.set("scenario", sel.value); state.sim = null; refreshAll(); });
+    $$("#lang-switch [data-lang]").forEach((b) => b.addEventListener("click", () => setLanguage(b.dataset.lang)));
+    applyStatic();
     $("#theme-btn").addEventListener("click", () => {
       const root = document.documentElement;
       const cur = root.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
@@ -79,15 +109,15 @@
       store.set("theme", root.dataset.theme);
       refreshAll();
     });
-    const t = store.get("theme", null);
-    if (t) document.documentElement.dataset.theme = t;
+    const th = store.get("theme", null);
+    if (th) document.documentElement.dataset.theme = th;
     $$(".tab").forEach((b) => b.addEventListener("click", () => { location.hash = b.dataset.view; }));
     window.addEventListener("hashchange", route);
   }
   function updateChip() {
     const s = scenario();
-    $("#atm-chip").textContent = `${s.o2}% O₂ · ${s.p} kPa (${psia(s.p)} psia) · ${s.g === 0 ? "µg" : s.g + " g"}`;
-    $("#atm-chip").title = s.note + " Source: " + s.src;
+    $("#atm-chip").textContent = `${fmt(s.o2)}% O₂ · ${fmt(s.p)}${KPA()} (${psia(s.p)} psia) · ${s.g === 0 ? "µg" : fmt(s.g) + " g"}`;
+    $("#atm-chip").title = `${s.note} ${t("top.source")}: ${s.src}`;
   }
   const VIEWS = ["overview", "atlas", "map", "risk", "rank", "ask", "gaps"];
   function route() {
@@ -163,44 +193,44 @@
     $("#view-overview").innerHTML = `
       <div class="hero">
         <div>
-          <div class="eyebrow">NASA Space Apps 2026 · Flame in Freefall</div>
-          <h1 style="margin-top:10px">Fire behaves differently off Earth. <em>EMBER</em> shows what NASA has learned, and what it means for the Moon and Mars.</h1>
-          <p class="lede">${E.INVESTIGATIONS.length} NASA combustion investigations, from Shuttle flame balls to Saffire's spacecraft-scale fires, curated into one searchable atlas. EMBER ranks them for your mission, maps where the evidence is thin, estimates material flammability in habitat atmospheres, and answers questions with cited sources.</p>
+          <div class="eyebrow">${t("ov.eyebrow")}</div>
+          <h1 style="margin-top:10px">${t("ov.h1")}</h1>
+          <p class="lede">${t("ov.lede", { n: E.INVESTIGATIONS.length })}</p>
           <div class="hero-actions">
-            <a class="btn primary" href="#risk">Explore fire risk for ${esc(s.label)}</a>
-            <a class="btn" href="#ask">Ask EMBER</a>
-            <a class="btn" href="#map">See the evidence map</a>
+            <a class="btn primary" href="#risk">${t("ov.btnRisk", { s: esc(s.label) })}</a>
+            <a class="btn" href="#ask">${t("ov.btnAsk")}</a>
+            <a class="btn" href="#map">${t("ov.btnMap")}</a>
           </div>
         </div>
         <div class="flame-compare">
-          <div class="flame-card"><canvas id="flame-1g" aria-label="Candle flame in normal gravity: tall, yellow, sooty"></canvas><div class="cap">1 g · buoyancy pulls air up<br>tall, yellow, sooty</div></div>
-          <div class="flame-card"><canvas id="flame-ug" aria-label="Candle flame in microgravity: dim blue sphere"></canvas><div class="cap">Microgravity · diffusion only<br>dim blue sphere</div></div>
+          <div class="flame-card"><canvas id="flame-1g" aria-label="${esc(t("ov.flame1Aria"))}"></canvas><div class="cap">${t("ov.flame1")}</div></div>
+          <div class="flame-card"><canvas id="flame-ug" aria-label="${esc(t("ov.flame2Aria"))}"></canvas><div class="cap">${t("ov.flame2")}</div></div>
         </div>
       </div>
       <div class="grid g4">
-        <div class="panel kpi"><span class="v num">${E.INVESTIGATIONS.length}</span><span class="l">investigations curated (${flown.length} flown, ${E.INVESTIGATIONS.length - flown.length} planned)</span></div>
-        <div class="panel kpi"><span class="v num">${yrs[0]}–${yrs[1]}</span><span class="l">years of flight experiments</span></div>
-        <div class="panel kpi"><span class="v num">≈${(Math.round(tests / 50) * 50).toLocaleString()}</span><span class="l">test points across the record</span></div>
-        <div class="panel kpi"><span class="v num">10–85%</span><span class="l">oxygen range tested (CFI-G reaches 85%)</span></div>
+        <div class="panel kpi"><span class="v num">${E.INVESTIGATIONS.length}</span><span class="l">${t("ov.kpi1", { f: flown.length, p: E.INVESTIGATIONS.length - flown.length })}</span></div>
+        <div class="panel kpi"><span class="v num">${yrs[0]}–${yrs[1]}</span><span class="l">${t("ov.kpi2")}</span></div>
+        <div class="panel kpi"><span class="v num">≈${(Math.round(tests / 50) * 50).toLocaleString(E.lang === "en" ? "en-US" : E.lang === "ru" ? "ru-RU" : "uz-Latn-UZ")}</span><span class="l">${t("ov.kpi3")}</span></div>
+        <div class="panel kpi"><span class="v num">10–85%</span><span class="l">${t("ov.kpi4")}</span></div>
       </div>
       <div class="split">
         <div class="panel">
-          <div class="panel-title"><h2>Top fire-safety insights</h2><span class="eyebrow">Ranked by mission impact</span></div>
+          <div class="panel-title"><h2>${t("ov.insights")}</h2><span class="eyebrow">${t("ov.rankedBy")}</span></div>
           <div class="insights">${E.INSIGHTS.map(insightCard).join("")}</div>
         </div>
         <div class="grid" style="align-content:start">
           <div class="panel">
-            <div class="panel-title"><h3>Most relevant for ${esc(s.label)}</h3><a href="#rank" class="eyebrow">Ranker →</a></div>
+            <div class="panel-title"><h3>${t("ov.mostRel", { s: esc(s.label) })}</h3><a href="#rank" class="eyebrow">${t("ov.rankerLink")}</a></div>
             ${top.map((x, n) => `<div class="rank-row" style="grid-template-columns:28px minmax(0,1fr) 48px"><span class="n">${n + 1}</span><div><button class="cite" data-inv="${x.inv.id}" type="button">${esc(x.inv.name)}</button> <span class="why">${esc(x.why)}</span></div><span class="score">${x.score.toFixed(0)}</span></div>`).join("")}
           </div>
           <div class="panel">
-            <div class="panel-title"><h3>Where the evidence is</h3><span class="eyebrow">Investigations by type</span></div>
+            <div class="panel-title"><h3>${t("ov.evidence")}</h3><span class="eyebrow">${t("ov.byType")}</span></div>
             ${cats.map((c) => `<div style="display:grid;grid-template-columns:150px minmax(0,1fr) 24px;gap:10px;align-items:center;margin:6px 0"><span style="font-size:.85rem">${esc(E.CATEGORIES[c.c].label)}</span><div class="bar"><span style="width:${(c.n / maxN) * 100}%;background:${E.CATEGORIES[c.c].color}"></span></div><span class="num" style="text-align:right">${c.n}</span></div>`).join("")}
-            <p class="note" style="margin-top:10px">Most flight data sits at 21% O₂ and 1 atm. Open the Flammability Map to see the gap around exploration atmospheres.</p>
+            <p class="note" style="margin-top:10px">${t("ov.evNote")}</p>
           </div>
           <div class="panel">
-            <div class="panel-title"><h3>From accidents to experiments</h3></div>
-            <div class="timeline">${E.INCIDENTS.map((x) => `<div class="tl-item ${x.kind}"><span class="tl-year">${x.year}</span><div><strong>${esc(x.title)}</strong><p class="muted" style="font-size:.88rem">${esc(x.text)} ${x.inv ? `<button class="cite" data-inv="${x.inv}" type="button">${esc(invById(x.inv).name)}</button>` : x.link ? `<a href="${x.link.url}" target="_blank" rel="noopener">source</a>` : ""}</p></div></div>`).join("")}</div>
+            <div class="panel-title"><h3>${t("ov.timeline")}</h3></div>
+            <div class="timeline">${E.INCIDENTS.map((x) => `<div class="tl-item ${x.kind}"><span class="tl-year">${x.year}</span><div><strong>${esc(x.title)}</strong><p class="muted" style="font-size:.88rem">${esc(x.text)} ${x.inv ? `<button class="cite" data-inv="${x.inv}" type="button">${esc(invById(x.inv).name)}</button>` : x.link ? `<a href="${x.link.url}" target="_blank" rel="noopener">${t("ov.source")}</a>` : ""}</p></div></div>`).join("")}</div>
           </div>
         </div>
       </div>`;
@@ -208,7 +238,7 @@
     drawFlame($("#flame-ug"), true);
   }
   function insightCard(s) {
-    return `<article class="insight"><div class="rank">${s.rank}</div><div><h3>${esc(s.title)}</h3><p style="font-size:.92rem">${esc(s.text)}</p><p style="font-size:.88rem;margin-top:6px"><strong>Action:</strong> ${esc(s.action)}</p><div class="meta">${s.tags.map((t) => `<span class="pill ${t === "gap" ? "warn" : t === "suppression" ? "ember" : "flame"}">${esc(t)}</span>`).join("")}${s.cites.map((c) => `<button class="cite" data-inv="${c}" type="button">${esc(invById(c).name)}</button>`).join("")}</div></div></article>`;
+    return `<article class="insight"><div class="rank">${s.rank}</div><div><h3>${esc(s.title)}</h3><p style="font-size:.92rem">${esc(s.text)}</p><p style="font-size:.88rem;margin-top:6px"><strong>${t("ov.action")}</strong> ${esc(s.action)}</p><div class="meta">${s.tags.map((g) => `<span class="pill ${g === "gap" ? "warn" : g === "suppression" ? "ember" : "flame"}">${esc(t("tag." + g))}</span>`).join("")}${s.cites.map((c) => `<button class="cite" data-inv="${c}" type="button">${esc(invById(c).name)}</button>`).join("")}</div></div></article>`;
   }
 
   /* ---------------- atlas ---------------- */
@@ -217,13 +247,13 @@
     if (!v.dataset.init) {
       v.dataset.init = "1";
       v.innerHTML = `
-        <div class="view-head"><div><h2>Investigation Atlas</h2><p>Every curated NASA combustion investigation with its objective, fuels, test conditions, diagnostics and findings. Search, filter, open a record, or pick up to three to compare side by side.</p></div></div>
+        <div class="view-head"><div><h2>${t("at.title")}</h2><p>${t("at.desc")}</p></div></div>
         <div class="panel grid" style="gap:12px">
           <div class="toolbar">
-            <input type="search" id="atlas-q" placeholder="Search fuels, sensors, findings… e.g. Nomex, soot, CO2, smoke" aria-label="Search investigations">
-            <select id="atlas-sort" aria-label="Sort"><option value="relevance">Sort: relevance to mission</option><option value="year">Sort: newest first</option><option value="o2">Sort: highest O₂ tested</option><option value="name">Sort: name</option></select>
+            <input type="search" id="atlas-q" placeholder="${esc(t("at.search"))}" aria-label="${esc(t("at.searchAria"))}" value="${esc(state.atlas.q)}">
+            <select id="atlas-sort" aria-label="${esc(t("at.sortAria"))}">${[["relevance", "at.sortRel"], ["year", "at.sortYear"], ["o2", "at.sortO2"], ["name", "at.sortName"]].map(([v, k]) => `<option value="${v}" ${state.atlas.sort === v ? "selected" : ""}>${t(k)}</option>`).join("")}</select>
           </div>
-          <div class="chips" id="atlas-cats">${Object.entries(E.CATEGORIES).map(([k, c]) => `<button class="chip" data-cat="${k}" aria-pressed="false" type="button">${esc(c.label)}</button>`).join("")}</div>
+          <div class="chips" id="atlas-cats">${Object.entries(E.CATEGORIES).map(([k, c]) => `<button class="chip" data-cat="${k}" aria-pressed="${state.atlas.cats.includes(k)}" type="button">${esc(c.label)}</button>`).join("")}</div>
         </div>
         <div class="cards" id="atlas-cards"></div>
         <div id="compare-bar"></div>`;
@@ -244,18 +274,20 @@
     let list = E.INVESTIGATIONS.filter((i) => (!state.atlas.cats.length || state.atlas.cats.includes(i.category)));
     if (q) {
       const terms = q.split(/\s+/);
-      list = list.filter((i) => { const hay = [i.name, i.full, i.fuels, i.objectives, i.findings.join(" "), i.sensors.join(" "), i.team, i.platform, i.diluents].join(" ").toLowerCase(); return terms.every((t) => hay.includes(t)); });
+      const hayOf = (i) => [i.name, i.full, i.fuels, i.objectives, i.findings.join(" "), i.sensors.join(" "), i.team, i.platform, i.diluents].join(" ");
+      // search the shown language and the English record, so "smoke" and "дым" both work
+      list = list.filter((i) => { const hay = (hayOf(i) + " " + hayOf(E.origInv(i.id) || i)).toLowerCase().replace(/[ʻʼ’‘`]/g, "'"); return terms.every((w) => hay.includes(w.replace(/[ʻʼ’‘`]/g, "'"))); });
     }
     const sorters = { relevance: (a, b) => ranks[b.id] - ranks[a.id], year: (a, b) => b.years[1] - a.years[1], o2: (a, b) => b.o2[1] - a.o2[1], name: (a, b) => a.name.localeCompare(b.name) };
     list.sort(sorters[state.atlas.sort]);
     $("#atlas-cards").innerHTML = list.length ? list.map((i) => `
-      <article class="inv-card" data-inv="${i.id}" tabindex="0" role="button" aria-label="Open ${esc(i.name)}">
-        <div class="top"><div><div class="acr">${esc(i.name)}</div><div class="full">${esc(i.full)}</div></div><span class="num" title="Relevance to current mission" style="font-weight:700;color:var(--flame)">${ranks[i.id].toFixed(0)}</span></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${catPill(i.category)}<span class="pill">${yearStr(i)}</span>${i.planned ? '<span class="pill warn">planned</span>' : ""}</div>
+      <article class="inv-card" data-inv="${i.id}" tabindex="0" role="button" aria-label="${esc(t("at.open", { name: i.name }))}">
+        <div class="top"><div><div class="acr">${esc(i.name)}</div><div class="full">${esc(i.full)}</div></div><span class="num" title="${esc(t("at.relTitle"))}" style="font-weight:700;color:var(--flame)">${ranks[i.id].toFixed(0)}</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${catPill(i.category)}<span class="pill">${yearStr(i)}</span>${i.planned ? `<span class="pill warn">${t("at.planned")}</span>` : ""}</div>
         <p style="font-size:.88rem">${esc(i.findings[0])}</p>
-        <div class="cond"><div><div class="k">O₂</div><div class="v">${range(i.o2, i.approx && i.approx.o2, "%")}</div></div><div><div class="k">Pressure</div><div class="v">${range(i.p, i.approx && i.approx.p)} kPa</div></div><div><div class="k">Flow</div><div class="v">${range(i.flow, i.approx && i.approx.flow)} cm/s</div></div></div>
-        <label class="cmp-toggle" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${i.id}" ${state.compare.includes(i.id) ? "checked" : ""}> Compare</label>
-      </article>`).join("") : `<div class="panel muted">No investigation matches “${esc(q)}”. Try a fuel (heptane, PMMA), a sensor (radiometer) or a hazard (smoke).</div>`;
+        <div class="cond"><div><div class="k">O₂</div><div class="v">${range(i.o2, i.approx && i.approx.o2, "%")}</div></div><div><div class="k">${t("at.pressure")}</div><div class="v">${range(i.p, i.approx && i.approx.p)}${KPA()}</div></div><div><div class="k">${t("at.flow")}</div><div class="v">${range(i.flow, i.approx && i.approx.flow)}${CMS()}</div></div></div>
+        <label class="cmp-toggle" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${i.id}" ${state.compare.includes(i.id) ? "checked" : ""}> ${t("at.compare")}</label>
+      </article>`).join("") : `<div class="panel muted">${esc(t("at.noMatch", { q }))}</div>`;
     $$("#atlas-cards .inv-card").forEach((c) => {
       c.addEventListener("click", () => openDrawer(c.dataset.inv));
       c.addEventListener("keydown", (e) => { if (e.key === "Enter") openDrawer(c.dataset.inv); });
@@ -271,7 +303,7 @@
   function drawCompareBar() {
     const bar = $("#compare-bar");
     if (!bar) return;
-    bar.innerHTML = state.compare.length ? `<div class="compare-bar"><strong>${state.compare.length}/3 selected:</strong> ${state.compare.map((id) => esc(invById(id).name)).join(", ")}<span style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="cmp-clear" type="button">Clear</button><button class="btn primary" id="cmp-go" type="button" ${state.compare.length < 2 ? "disabled" : ""}>Compare</button></span></div>` : "";
+    bar.innerHTML = state.compare.length ? `<div class="compare-bar"><strong>${t("at.selected", { n: state.compare.length })}</strong> ${state.compare.map((id) => esc(invById(id).name)).join(", ")}<span style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="cmp-clear" type="button">${t("at.clear")}</button><button class="btn primary" id="cmp-go" type="button" ${state.compare.length < 2 ? "disabled" : ""}>${t("at.compare")}</button></span></div>` : "";
     if (state.compare.length) {
       $("#cmp-clear").onclick = () => { state.compare = []; drawCards(); };
       $("#cmp-go").onclick = openCompare;
@@ -280,40 +312,41 @@
   function openCompare() {
     const invs = state.compare.map(invById);
     const rows = [
-      ["Type", (i) => E.CATEGORIES[i.category].label],
-      ["Years", yearStr],
-      ["Platform", (i) => i.platform],
-      ["Fuels / samples", (i) => i.fuels],
+      [t("cmp.type"), (i) => E.CATEGORIES[i.category].label],
+      [t("cmp.years"), yearStr],
+      [t("dr.platform"), (i) => i.platform],
+      [t("dr.fuels"), (i) => i.fuels],
       ["O₂ (%)", (i) => range(i.o2, i.approx && i.approx.o2)],
-      ["Pressure (kPa)", (i) => range(i.p, i.approx && i.approx.p)],
-      ["Flow (cm/s)", (i) => range(i.flow, i.approx && i.approx.flow)],
-      ["Diluents", (i) => i.diluents],
-      ["Diagnostics", (i) => i.sensors.join(", ")],
-      ["Largest sample", (i) => (i.scaleCm ? i.scaleCm + " cm" : "—")],
-      ["Key finding", (i) => i.findings[0]],
-      ["Prevention", (i) => i.implications.prevention || "—"],
-      ["Detection", (i) => i.implications.detection || "—"],
-      ["Suppression", (i) => i.implications.suppression || "—"],
+      [`${t("at.pressure")} (${t("u.kpa")})`, (i) => range(i.p, i.approx && i.approx.p)],
+      [`${t("at.flow")} (${t("u.cms")})`, (i) => range(i.flow, i.approx && i.approx.flow)],
+      [t("dr.diluents"), (i) => i.diluents],
+      [t("dr.diagnostics"), (i) => i.sensors.join(", ")],
+      [t("cmp.largest"), (i) => (i.scaleCm ? fmt(i.scaleCm) + " " + t("u.cm") : "—")],
+      [t("cmp.keyFinding"), (i) => i.findings[0]],
+      [t("layer.prevention"), (i) => i.implications.prevention || "—"],
+      [t("layer.detection"), (i) => i.implications.detection || "—"],
+      [t("layer.suppression"), (i) => i.implications.suppression || "—"],
     ];
     const s = scenario();
     const same = [], diff = [];
-    const fields = { platform: "hardware", category: "fire type" };
-    Object.entries(fields).forEach(([k, label]) => (new Set(invs.map((i) => (k === "platform" ? i.platform.split("·")[1] || i.platform : i[k]))).size === 1 ? same : diff).push(label));
+    // compare on the English record so translated wording does not count as a difference
+    const fields = { platform: t("cmp.hardware"), category: t("cmp.fireType") };
+    Object.entries(fields).forEach(([k, label]) => (new Set(invs.map((x) => { const i = E.origInv(x.id) || x; return k === "platform" ? i.platform.split("·")[1] || i.platform : i[k]; })).size === 1 ? same : diff).push(label));
     const o2Overlap = Math.max(...invs.map((i) => i.o2[0])) <= Math.min(...invs.map((i) => i.o2[1]));
-    (o2Overlap ? same : diff).push("oxygen range");
+    (o2Overlap ? same : diff).push(t("cmp.o2range"));
     showDrawer(`
-      <h2>Compare investigations</h2>
-      <p class="muted">Shared: ${same.join(", ") || "none"} · Different: ${diff.join(", ") || "none"}.</p>
+      <h2>${t("cmp.title")}</h2>
+      <p class="muted">${t("cmp.shared")}: ${same.join(", ") || t("cmp.none")} · ${t("cmp.different")}: ${diff.join(", ") || t("cmp.none")}.</p>
       <div class="table-wrap"><table><thead><tr><th></th>${invs.map((i) => `<th>${esc(i.name)}</th>`).join("")}</tr></thead><tbody>
       ${rows.map(([k, f]) => `<tr><th scope="row">${k}</th>${invs.map((i) => `<td>${esc(f(i))}</td>`).join("")}</tr>`).join("")}
-      <tr><th scope="row">Relevance to ${esc(s.label)}</th>${invs.map((i) => `<td class="num">${M.rank(s).find((r) => r.inv.id === i.id).score.toFixed(0)}/100</td>`).join("")}</tr>
+      <tr><th scope="row">${t("cmp.relevance", { s: esc(s.label) })}</th>${invs.map((i) => `<td class="num">${M.rank(s).find((r) => r.inv.id === i.id).score.toFixed(0)}/100</td>`).join("")}</tr>
       </tbody></table></div>`);
   }
 
   /* ---------------- drawer ---------------- */
   function showDrawer(html) {
     const root = $("#drawer-root");
-    root.innerHTML = `<div class="drawer-backdrop"></div><aside class="drawer" role="dialog" aria-modal="true"><button class="icon-btn close" type="button" aria-label="Close">✕ Close</button>${html}</aside>`;
+    root.innerHTML = `<div class="drawer-backdrop"></div><aside class="drawer" role="dialog" aria-modal="true"><button class="icon-btn close" type="button" aria-label="${esc(t("dr.closeAria"))}">${t("dr.close")}</button>${html}</aside>`;
     const close = () => (root.innerHTML = "");
     $(".drawer-backdrop", root).onclick = close;
     $(".close", root).onclick = close;
@@ -329,22 +362,22 @@
       <div><div class="eyebrow">${esc(E.CATEGORIES[i.category].label)} · ${yearStr(i)}</div><h2 style="margin-top:6px">${esc(i.name)}</h2><p class="muted">${esc(i.full)}</p></div>
       <p>${esc(i.objectives)}</p>
       <dl class="kv">
-        <dt>Platform</dt><dd>${esc(i.platform)}</dd>
-        <dt>Team</dt><dd>${esc(i.team)}</dd>
-        <dt>Fuels / samples</dt><dd>${esc(i.fuels)}</dd>
-        <dt>Oxygen</dt><dd class="num">${range(i.o2, i.approx && i.approx.o2, "%")}</dd>
-        <dt>Pressure</dt><dd class="num">${range(i.p, i.approx && i.approx.p)} kPa (${psia(i.p[0])}${i.p[0] !== i.p[1] ? "–" + psia(i.p[1]) : ""} psia)</dd>
-        <dt>Flow</dt><dd class="num">${range(i.flow, i.approx && i.approx.flow)} cm/s</dd>
-        <dt>Diluents</dt><dd>${esc(i.diluents)}</dd>
-        <dt>Diagnostics</dt><dd>${i.sensors.map((x) => `<span class="pill" style="margin:0 4px 4px 0;display:inline-block">${esc(x)}</span>`).join("")}</dd>
-        <dt>Tests</dt><dd class="num">${i.tests ? (i.approxTests ? "≈" : "") + i.tests : i.planned ? "planned" : "in progress"}</dd>
+        <dt>${t("dr.platform")}</dt><dd>${esc(i.platform)}</dd>
+        <dt>${t("dr.team")}</dt><dd>${esc(i.team)}</dd>
+        <dt>${t("dr.fuels")}</dt><dd>${esc(i.fuels)}</dd>
+        <dt>${t("dr.oxygen")}</dt><dd class="num">${range(i.o2, i.approx && i.approx.o2, "%")}</dd>
+        <dt>${t("dr.pressure")}</dt><dd class="num">${range(i.p, i.approx && i.approx.p)}${KPA()} (${psia(i.p[0])}${i.p[0] !== i.p[1] ? "–" + psia(i.p[1]) : ""} psia)</dd>
+        <dt>${t("dr.flow")}</dt><dd class="num">${range(i.flow, i.approx && i.approx.flow)}${CMS()}</dd>
+        <dt>${t("dr.diluents")}</dt><dd>${esc(i.diluents)}</dd>
+        <dt>${t("dr.diagnostics")}</dt><dd>${i.sensors.map((x) => `<span class="pill" style="margin:0 4px 4px 0;display:inline-block">${esc(x)}</span>`).join("")}</dd>
+        <dt>${t("dr.tests")}</dt><dd class="num">${i.tests ? (i.approxTests ? "≈" : "") + i.tests : i.planned ? t("at.planned") : t("dr.inProgress")}</dd>
       </dl>
-      ${i.approx ? '<p class="note">Values marked ≈ are curator estimates where the NASA source gives no explicit range.</p>' : ""}
-      <div><h3>Findings</h3><ul class="findings" style="margin-top:8px">${i.findings.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></div>
-      <div><h3 style="margin-bottom:8px">Fire-safety implications</h3><div class="implic">${["prevention", "detection", "suppression"].map((k) => `<div><h4 style="color:${k === "prevention" ? "var(--flame)" : k === "detection" ? "var(--ok)" : "var(--ember)"}">${k}</h4>${esc(i.implications[k] || "Not a primary focus.")}</div>`).join("")}</div></div>
-      <div class="ai-box"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><strong>What it means for ${esc(s.label)}</strong><span class="pill flame">relevance ${r.score.toFixed(0)}/100</span></div><div id="interp" class="muted">Generating interpretation…</div></div>
-      <div><h3>Sources</h3><ul class="findings" style="margin-top:8px">${i.links.map((l) => `<li><a href="${l.url}" target="_blank" rel="noopener">${esc(l.label)}</a></li>`).join("")}</ul></div>`);
-    E.ai.interpret(i, s).then((res) => { const el = $("#interp"); if (el) { el.classList.remove("muted"); el.innerHTML = renderAnswer(res.text) + `<div class="engine" style="margin-top:6px">${res.engine === "offline" ? "Offline reasoner" : "Claude"} · confidence ${esc(res.confidence)}</div>`; } });
+      ${i.approx ? `<p class="note">${t("dr.approx")}</p>` : ""}
+      <div><h3>${t("dr.findings")}</h3><ul class="findings" style="margin-top:8px">${i.findings.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></div>
+      <div><h3 style="margin-bottom:8px">${t("dr.implications")}</h3><div class="implic">${["prevention", "detection", "suppression"].map((k) => `<div><h4 style="color:${k === "prevention" ? "var(--flame)" : k === "detection" ? "var(--ok)" : "var(--ember)"}">${t("layer." + k)}</h4>${esc(i.implications[k] || t("dr.notFocus"))}</div>`).join("")}</div></div>
+      <div class="ai-box"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><strong>${t("dr.meansFor", { s: esc(s.label) })}</strong><span class="pill flame">${t("dr.relevance")} ${r.score.toFixed(0)}/100</span></div><div id="interp" class="muted">${t("dr.generating")}</div></div>
+      <div><h3>${t("dr.sources")}</h3><ul class="findings" style="margin-top:8px">${i.links.map((l) => `<li><a href="${l.url}" target="_blank" rel="noopener">${esc(l.label)}</a></li>`).join("")}</ul></div>`);
+    E.ai.interpret(i, s).then((res) => { const el = $("#interp"); if (el) { el.classList.remove("muted"); el.innerHTML = renderAnswer(res.text) + `<div class="engine" style="margin-top:6px">${res.engine === "offline" ? t("eng.offline") : t("eng.claude")} · ${t("eng.confidence")}: ${esc(lv(res.confidence))}</div>`; } });
   }
 
   /* ---------------- SVG helpers ---------------- */
@@ -362,15 +395,15 @@
     const col = (c) => (c.startsWith("var(") ? css.getPropertyValue(c.slice(4, -1)).trim() : c);
     let g = "";
     // grid
-    [20, 30, 50, 70, 101.3, 150, 200, 300].forEach((p) => { g += `<g class="grid"><line x1="${xs(p)}" x2="${xs(p)}" y1="${mt}" y2="${H - mb}"/></g><text x="${xs(p)}" y="${H - mb + 18}" text-anchor="middle">${p}</text>`; });
+    [20, 30, 50, 70, 101.3, 150, 200, 300].forEach((p) => { g += `<g class="grid"><line x1="${xs(p)}" x2="${xs(p)}" y1="${mt}" y2="${H - mb}"/></g><text x="${xs(p)}" y="${H - mb + 18}" text-anchor="middle">${fmt(p)}</text>`; });
     [0, 20, 40, 60, 80, 100].forEach((o) => { g += `<g class="grid"><line x1="${ml}" x2="${W - mr}" y1="${ys(o)}" y2="${ys(o)}"/></g><text x="${ml - 8}" y="${ys(o) + 4}" text-anchor="end">${o}%</text>`; });
-    g += `<text x="${(ml + W - mr) / 2}" y="${H - 8}" text-anchor="middle">Total pressure, kPa (log scale) · 101.3 kPa = 1 atm = 14.7 psia</text>`;
-    g += `<text transform="translate(14 ${(mt + H - mb) / 2}) rotate(-90)" text-anchor="middle">Oxygen concentration, % by volume</text>`;
+    g += `<text x="${(ml + W - mr) / 2}" y="${H - 8}" text-anchor="middle">${esc(t("map.xAxis"))}</text>`;
+    g += `<text transform="translate(14 ${(mt + H - mb) / 2}) rotate(-90)" text-anchor="middle">${esc(t("map.yAxis"))}</text>`;
     // normoxic curve
     let path = "";
     for (let p = 21.3; p <= 320; p *= 1.03) path += `${path ? "L" : "M"}${xs(p).toFixed(1)},${ys(Math.min(100, 2130 / p)).toFixed(1)}`;
     g += `<path d="${path}" fill="none" stroke="${col("var(--muted)")}" stroke-dasharray="5 5" stroke-width="1.2"/>`;
-    g += `<text class="lbl" x="${xs(300)}" y="${ys(2130 / 300) + 18}" text-anchor="end">dashed: sea-level O₂ partial pressure (21.3 kPa)</text>`;
+    g += `<text class="lbl" x="${xs(300)}" y="${ys(2130 / 300) + 18}" text-anchor="end">${esc(t("map.dashed"))}</text>`;
     // envelopes
     const invs = E.INVESTIGATIONS.filter((i) => state.mapCats.includes(i.category));
     const pointGroups = {};
@@ -395,7 +428,7 @@
         const c = col(E.CATEGORIES[i.category].color);
         points.push(`<circle class="env" data-inv="${i.id}" cx="${cx + Math.cos(ang) * rad}" cy="${cy + Math.sin(ang) * rad}" r="5.5" fill="${c}" stroke="${col("var(--panel)")}" stroke-width="1.5" style="cursor:pointer"/>`);
       });
-      if (grp.length > 2) g += `<text class="lbl" x="${cx + 22}" y="${cy + 40}">${grp.length} investigations tested here</text>`;
+      if (grp.length > 2) g += `<text class="lbl" x="${cx + 22}" y="${cy + 40}">${esc(t("map.cluster", { n: grp.length }))}</text>`;
     });
     g += points.join("");
     // reference atmospheres
@@ -411,26 +444,23 @@
     const inside = E.INVESTIGATIONS.filter((i) => !i.planned && M.envDist(i, s.o2, s.p) === 0);
     const solidsInside = inside.filter((i) => i.category === "solid");
     v.innerHTML = `
-      <div class="view-head"><div><h2>Flammability Map</h2><p>Each box is the oxygen and pressure range an investigation tested. Diamonds are real and planned spacecraft atmospheres. The pulsing ring is your mission: <strong>${esc(s.label)}</strong>. Click any box to open its record.</p></div></div>
+      <div class="view-head"><div><h2>${t("map.title")}</h2><p>${t("map.desc", { s: esc(s.label) })}</p></div></div>
       <div class="split">
         <div class="panel">
           <div class="chips" id="map-cats" style="margin-bottom:10px">${Object.entries(E.CATEGORIES).map(([k, c]) => `<button class="chip" data-cat="${k}" aria-pressed="${state.mapCats.includes(k)}" type="button"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c.color};margin-right:6px"></i>${esc(c.label)}</button>`).join("")}</div>
           <div class="chart" id="map-chart">${svgNS(W, H, g)}</div>
-          <div class="legend"><span><i style="border:1.5px solid var(--fg);border-radius:0;transform:rotate(45deg);width:9px;height:9px"></i>Spacecraft atmosphere</span><span><i style="border:1.5px solid var(--crit);transform:rotate(45deg);width:9px;height:9px;border-radius:0"></i>Historic accident</span><span><i style="border:1.5px dashed var(--warn)"></i>Planned investigation</span><span><i style="border:2px solid var(--flame);border-radius:50%"></i>Current mission</span></div>
+          <div class="legend"><span><i style="border:1.5px solid var(--fg);border-radius:0;transform:rotate(45deg);width:9px;height:9px"></i>${t("map.legAtm")}</span><span><i style="border:1.5px solid var(--crit);transform:rotate(45deg);width:9px;height:9px;border-radius:0"></i>${t("map.legAcc")}</span><span><i style="border:1.5px dashed var(--warn)"></i>${t("map.legPlanned")}</span><span><i style="border:2px solid var(--flame);border-radius:50%"></i>${t("map.legMission")}</span></div>
         </div>
         <div class="grid" style="align-content:start">
           <div class="panel">
-            <h3>Evidence at ${s.o2}% O₂ · ${s.p} kPa</h3>
-            <p style="margin-top:8px"><span class="num" style="font-size:2rem;font-weight:700;color:${inside.length > 3 ? "var(--ok)" : inside.length ? "var(--warn)" : "var(--crit)"}">${inside.length}</span> flown investigations cover this atmosphere, <strong>${solidsInside.length}</strong> of them with solid materials.</p>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${inside.map((i) => `<button class="cite" data-inv="${i.id}" type="button">${esc(i.name)}</button>`).join("") || '<span class="muted">None. Every number here is an extrapolation.</span>'}</div>
+            <h3>${t("map.evTitle", { o2: fmt(s.o2), p: fmt(s.p) })}</h3>
+            <p style="margin-top:8px"><span class="num" style="font-size:2rem;font-weight:700;color:${inside.length > 3 ? "var(--ok)" : inside.length ? "var(--warn)" : "var(--crit)"}">${inside.length}</span> ${t("map.evText", { k: solidsInside.length })}</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${inside.map((i) => `<button class="cite" data-inv="${i.id}" type="button">${esc(i.name)}</button>`).join("") || `<span class="muted">${t("map.evNone")}</span>`}</div>
           </div>
           <div class="panel">
-            <h3>How to read it</h3>
+            <h3>${t("map.howTitle")}</h3>
             <ul class="findings" style="margin-top:8px;font-size:.9rem">
-              <li>Most flight data sits in one cluster at 21% O₂, 101.3 kPa (sea-level air).</li>
-              <li>Exploration atmospheres (26.5–34% O₂ at 56–70 kPa) lie above the dashed line: same oxygen partial pressure as sea level, but a higher oxygen <em>concentration</em>, which drives flammability.</li>
-              <li>Only Saffire IV–VI and SoFIE reach that region with solid materials.</li>
-              <li>Apollo 1 sits at the top right: 100% O₂ above sea-level pressure.</li>
+              ${["map.how1", "map.how2", "map.how3", "map.how4"].map((k) => `<li>${t(k)}</li>`).join("")}
             </ul>
           </div>
         </div>
@@ -442,7 +472,7 @@
     }));
     $$("#map-chart .env").forEach((el) => {
       const i = invById(el.dataset.inv);
-      el.addEventListener("mousemove", (e) => showTip(`<strong>${esc(i.name)}</strong> · ${esc(E.CATEGORIES[i.category].label)}<br><span class="mono">${range(i.o2, i.approx && i.approx.o2, "% O₂")} · ${range(i.p, i.approx && i.approx.p, " kPa")}</span><br>${esc(i.findings[0])}`, e));
+      el.addEventListener("mousemove", (e) => showTip(`<strong>${esc(i.name)}</strong> · ${esc(E.CATEGORIES[i.category].label)}<br><span class="mono">${range(i.o2, i.approx && i.approx.o2, "% O₂")} · ${range(i.p, i.approx && i.approx.p, KPA())}</span><br>${esc(i.findings[0])}`, e));
       el.addEventListener("mouseleave", hideTip);
       el.addEventListener("click", () => { hideTip(); openDrawer(i.id); });
     });
@@ -455,23 +485,23 @@
     if (!state.sim) state.sim = { o2: s.o2, p: s.p, g: s.g, vent: s.vent, materialId: store.get("material", "nomex") };
     const sim = state.sim;
     v.innerHTML = `
-      <div class="view-head"><div><h2>Fire Risk Explorer</h2><p>Choose an atmosphere, gravity level, ventilation speed and material. EMBER estimates whether a flame can spread, shows the evidence behind the estimate, and flags where no flight data exists yet.</p></div></div>
+      <div class="view-head"><div><h2>${t("rk.title")}</h2><p>${t("rk.desc")}</p></div></div>
       <div class="split" style="grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)">
         <div class="panel controls">
           <div class="presets">${E.SCENARIOS.map((x) => `<button class="chip" data-preset="${x.id}" type="button" aria-pressed="${x.id === s.id}">${esc(x.label.split(" (")[0])}</button>`).join("")}</div>
-          <div class="ctrl"><label for="sim-mat">Material</label><select id="sim-mat">${E.MATERIALS.map((m) => `<option value="${m.id}" ${m.id === sim.materialId ? "selected" : ""}>${esc(m.label)} · LOI ${m.loi}%</option>`).join("")}</select><div class="hint" id="mat-note"></div></div>
-          <div class="ctrl"><label for="sim-o2">Oxygen <output id="o-o2"></output></label><input type="range" id="sim-o2" min="15" max="100" step="0.5" value="${sim.o2}"></div>
-          <div class="ctrl"><label for="sim-p">Pressure <output id="o-p"></output></label><input type="range" id="sim-p" min="20" max="160" step="0.5" value="${sim.p}"></div>
-          <div class="ctrl"><label for="sim-g">Gravity <output id="o-g"></output></label><input type="range" id="sim-g" min="0" max="1" step="0.001" value="${sim.g}"><div class="hint">0 = orbit · 0.166 = Moon · 0.378 = Mars · 1 = Earth</div></div>
-          <div class="ctrl"><label for="sim-v">Ventilation flow <output id="o-v"></output></label><input type="range" id="sim-v" min="0" max="50" step="0.5" value="${sim.vent}"><div class="hint">ISS cabin air moves at roughly 5–20 cm/s. 0 = ventilation shut off.</div></div>
-          <p class="note">Model: limiting O₂ follows the U-shaped flow dependence measured for solids in microgravity (quenching at low flow, blow-off at high flow), calibrated so that at 1 g and 1 atm it equals the material's Limiting Oxygen Index. Buoyant flow scales as 30 cm/s × g<sup>1/3</sup>; lower pressure raises the limit slightly. It shows trends for screening and teaching, not certified limits.</p>
+          <div class="ctrl"><label for="sim-mat">${t("rk.material")}</label><select id="sim-mat">${E.MATERIALS.map((m) => `<option value="${m.id}" ${m.id === sim.materialId ? "selected" : ""}>${esc(m.label)} · LOI ${m.loi}%</option>`).join("")}</select><div class="hint" id="mat-note"></div></div>
+          <div class="ctrl"><label for="sim-o2">${t("rk.oxygen")} <output id="o-o2"></output></label><input type="range" id="sim-o2" min="15" max="100" step="0.5" value="${sim.o2}"></div>
+          <div class="ctrl"><label for="sim-p">${t("rk.pressure")} <output id="o-p"></output></label><input type="range" id="sim-p" min="20" max="160" step="0.5" value="${sim.p}"></div>
+          <div class="ctrl"><label for="sim-g">${t("rk.gravity")} <output id="o-g"></output></label><input type="range" id="sim-g" min="0" max="1" step="0.001" value="${sim.g}"><div class="hint">${t("rk.gHint")}</div></div>
+          <div class="ctrl"><label for="sim-v">${t("rk.vent")} <output id="o-v"></output></label><input type="range" id="sim-v" min="0" max="50" step="0.5" value="${sim.vent}"><div class="hint">${t("rk.vHint")}</div></div>
+          <p class="note">${t("rk.note")}</p>
         </div>
         <div class="grid" style="align-content:start">
           <div class="verdict" id="verdict"></div>
-          <div class="panel"><div class="panel-title"><h3>Limiting oxygen vs flow at the flame</h3><span class="eyebrow">Shaded = flame can spread</span></div><div class="chart" id="risk-chart"></div></div>
+          <div class="panel"><div class="panel-title"><h3>${t("rk.chart")}</h3><span class="eyebrow">${t("rk.shaded")}</span></div><div class="chart" id="risk-chart"></div></div>
           <div class="grid g2">
-            <div class="panel"><h3>Same atmosphere, different worlds</h3><div class="table-wrap" style="margin-top:8px"><table id="gravity-table"></table></div></div>
-            <div class="panel"><h3>Evidence behind this estimate</h3><div id="evidence" style="margin-top:8px"></div></div>
+            <div class="panel"><h3>${t("rk.worlds")}</h3><div class="table-wrap" style="margin-top:8px"><table id="gravity-table"></table></div></div>
+            <div class="panel"><h3>${t("rk.evidence")}</h3><div id="evidence" style="margin-top:8px"></div></div>
           </div>
         </div>
       </div>`;
@@ -490,28 +520,28 @@
   function updateRisk() {
     const sim = state.sim;
     const a = M.assess(sim);
-    $("#o-o2").textContent = `${sim.o2.toFixed(1)}%`;
-    $("#o-p").textContent = `${sim.p.toFixed(1)} kPa · ${psia(sim.p)} psia`;
-    $("#o-g").textContent = sim.g === 0 ? "µg (orbit)" : `${sim.g.toFixed(3)} g`;
-    $("#o-v").textContent = `${sim.vent.toFixed(1)} cm/s`;
+    $("#o-o2").textContent = `${n1(sim.o2)}%`;
+    $("#o-p").textContent = `${n1(sim.p)}${KPA()} · ${psia(sim.p)} psia`;
+    $("#o-g").textContent = sim.g === 0 ? t("rk.orbit") : `${E.num(sim.g, 3)} g`;
+    $("#o-v").textContent = `${n1(sim.vent)}${CMS()}`;
     $("#mat-note").textContent = a.material.note;
     const vd = $("#verdict");
     vd.className = `verdict panel s${a.cls}`;
-    vd.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline"><div><div class="eyebrow">${esc(a.material.label)}</div><div class="state">${a.state}</div></div><span class="pill ${a.coverage.level === "High" ? "ok" : a.coverage.level === "Medium" ? "warn" : "crit"}">Evidence: ${a.coverage.level}</span></div>
+    vd.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline"><div><div class="eyebrow">${esc(a.material.label)}</div><div class="state">${a.state}</div></div><span class="pill ${a.coverage.level === "High" ? "ok" : a.coverage.level === "Medium" ? "warn" : "crit"}">${t("rk.evLevel", { l: lv(a.coverage.level) })}</span></div>
       <p>${a.text}</p>
       <div class="gauge" aria-hidden="true"><span style="left:${a.gauge}%"></span></div>
       <div class="metrics">
-        <div><div class="k">Estimated limiting O₂</div><div class="v">${a.loc.toFixed(1)}%</div></div>
-        <div><div class="k">Margin (O₂ − limit)</div><div class="v" style="color:${a.margin > 0 ? "var(--crit)" : "var(--ok)"}">${a.margin >= 0 ? "+" : ""}${a.margin.toFixed(1)} pts</div></div>
-        <div><div class="k">O₂ partial pressure</div><div class="v">${a.ppO2.toFixed(1)} kPa</div></div>
-        <div><div class="k">Flow at flame (vent + buoyant)</div><div class="v">${a.uEff.toFixed(1)} cm/s</div></div>
+        <div><div class="k">${t("rk.loc")}</div><div class="v">${n1(a.loc)}%</div></div>
+        <div><div class="k">${t("rk.margin")}</div><div class="v" style="color:${a.margin > 0 ? "var(--crit)" : "var(--ok)"}">${a.margin >= 0 ? "+" : ""}${n1(a.margin)} ${t("rk.pts")}</div></div>
+        <div><div class="k">${t("rk.pp")}</div><div class="v">${n1(a.ppO2)}${KPA()}</div></div>
+        <div><div class="k">${t("rk.ueff")}</div><div class="v">${n1(a.uEff)}${CMS()}</div></div>
       </div>
       ${a.coverage.flags.map((f) => `<p class="note" style="border-color:var(--warn)">⚠ ${esc(f)}</p>`).join("")}`;
     drawRiskChart(a);
     // gravity table
-    const worlds = [["Orbit (µg)", 0], ["Moon", 0.166], ["Mars", 0.378], ["Earth", 1]];
-    $("#gravity-table").innerHTML = `<thead><tr><th>Gravity</th><th class="num">Limit</th><th>State</th></tr></thead><tbody>${worlds.map(([n, g]) => { const r = M.assess({ ...sim, g }); return `<tr><td>${n}</td><td class="num">${r.loc.toFixed(1)}%</td><td><span class="pill ${["ok", "warn", "ember", "crit"][r.cls]}">${r.state}</span></td></tr>`; }).join("")}</tbody>`;
-    $("#evidence").innerHTML = `<p style="font-size:.9rem">${esc(a.coverage.note)}</p><div style="display:grid;gap:8px;margin-top:10px">${a.coverage.near.map((n) => `<div style="font-size:.86rem"><button class="cite" data-inv="${n.inv.id}" type="button">${esc(n.inv.name)}</button> ${n.d === 0 ? "tested this atmosphere" : "nearest tested range"}: <span class="mono">${range(n.inv.o2, false, "%")} · ${range(n.inv.p, false, " kPa")}</span></div>`).join("")}</div><p class="note" style="margin-top:10px">Supporting physics: BASS (flammability at lower O₂ in low-speed flow), SSCE (quiescent extinction), Saffire (large-scale growth).</p>`;
+    const worlds = [[t("w.orbit"), 0], [t("w.moon"), 0.166], [t("w.mars"), 0.378], [t("w.earth"), 1]];
+    $("#gravity-table").innerHTML = `<thead><tr><th>${t("rk.thG")}</th><th class="num">${t("rk.thLimit")}</th><th>${t("rk.thState")}</th></tr></thead><tbody>${worlds.map(([n, g]) => { const r = M.assess({ ...sim, g }); return `<tr><td>${n}</td><td class="num">${n1(r.loc)}%</td><td><span class="pill ${["ok", "warn", "ember", "crit"][r.cls]}">${r.state}</span></td></tr>`; }).join("")}</tbody>`;
+    $("#evidence").innerHTML = `<p style="font-size:.9rem">${esc(a.coverage.note)}</p><div style="display:grid;gap:8px;margin-top:10px">${a.coverage.near.map((n) => `<div style="font-size:.86rem"><button class="cite" data-inv="${n.inv.id}" type="button">${esc(n.inv.name)}</button> ${n.d === 0 ? t("rk.testedHere") : t("rk.nearest")}: <span class="mono">${range(n.inv.o2, false, "%")} · ${range(n.inv.p, false, KPA())}</span></div>`).join("")}</div><p class="note" style="margin-top:10px">${t("rk.physics")}</p>`;
   }
   function drawRiskChart(a) {
     const sim = state.sim;
@@ -522,18 +552,18 @@
     const c = (n) => css.getPropertyValue(n).trim();
     const pts = M.curve(a.material, sim.p);
     let g = "";
-    [0.5, 1, 2, 5, 10, 20, 50].forEach((u) => { g += `<g class="grid"><line x1="${xs(u)}" x2="${xs(u)}" y1="${mt}" y2="${H - mb}"/></g><text x="${xs(u)}" y="${H - mb + 16}" text-anchor="middle">${u}</text>`; });
+    [0.5, 1, 2, 5, 10, 20, 50].forEach((u) => { g += `<g class="grid"><line x1="${xs(u)}" x2="${xs(u)}" y1="${mt}" y2="${H - mb}"/></g><text x="${xs(u)}" y="${H - mb + 16}" text-anchor="middle">${fmt(u)}</text>`; });
     for (let o = 0; o <= yMax; o += 10) g += `<g class="grid"><line x1="${ml}" x2="${W - mr}" y1="${ys(o)}" y2="${ys(o)}"/></g><text x="${ml - 6}" y="${ys(o) + 4}" text-anchor="end">${o}%</text>`;
-    g += `<text x="${(ml + W - mr) / 2}" y="${H - 6}" text-anchor="middle">Effective flow at the flame, cm/s (log scale)</text>`;
+    g += `<text x="${(ml + W - mr) / 2}" y="${H - 6}" text-anchor="middle">${esc(t("rk.xAxis"))}</text>`;
     const clamp = (y) => Math.max(mt, Math.min(H - mb, y));
     const line = pts.map(([u, o], n) => `${n ? "L" : "M"}${xs(u).toFixed(1)},${clamp(ys(o)).toFixed(1)}`).join("");
     g += `<path d="${line} L${xs(60)},${mt} L${xs(0.5)},${mt} Z" fill="${c("--ember")}" fill-opacity="0.13"/>`;
     g += `<path d="${line}" fill="none" stroke="${c("--ember")}" stroke-width="2.4"/>`;
-    g += `<text x="${xs(0.7)}" y="${mt + 16}" style="fill:${c("--ember")}">flame can spread</text><text x="${xs(0.7)}" y="${H - mb - 8}" style="fill:${c("--ok")}">self-extinguishes</text>`;
+    g += `<text x="${xs(0.7)}" y="${mt + 16}" style="fill:${c("--ember")}">${esc(t("rk.canSpread"))}</text><text x="${xs(0.7)}" y="${H - mb - 8}" style="fill:${c("--ok")}">${esc(t("rk.selfExt"))}</text>`;
     // O2 line
-    g += `<line x1="${ml}" x2="${W - mr}" y1="${ys(sim.o2)}" y2="${ys(sim.o2)}" stroke="${c("--flame")}" stroke-dasharray="6 4" stroke-width="1.5"/><text x="${W - mr - 4}" y="${ys(sim.o2) - 6}" text-anchor="end" style="fill:${c("--flame")}">cabin O₂ ${sim.o2}%</text>`;
+    g += `<line x1="${ml}" x2="${W - mr}" y1="${ys(sim.o2)}" y2="${ys(sim.o2)}" stroke="${c("--flame")}" stroke-dasharray="6 4" stroke-width="1.5"/><text x="${W - mr - 4}" y="${ys(sim.o2) - 6}" text-anchor="end" style="fill:${c("--flame")}">${esc(t("rk.cabinO2", { o2: fmt(sim.o2) }))}</text>`;
     // world markers
-    [["µg", 0], ["Moon", 0.166], ["Mars", 0.378], ["Earth", 1]].forEach(([n, gv], k) => {
+    [["µg", 0], [t("w.moon"), 0.166], [t("w.mars"), 0.378], [t("w.earth"), 1]].forEach(([n, gv], k) => {
       const u = Math.max(0.5, Math.sqrt(sim.vent ** 2 + M.buoyantFlow(gv) ** 2));
       const x = xs(Math.min(60, u));
       g += `<line x1="${x}" x2="${x}" y1="${mt}" y2="${H - mb}" stroke="${c("--muted")}" stroke-width="1" stroke-dasharray="2 3"/><text x="${x + 4}" y="${mt + 30 + k * 14}" style="fill:${c("--fg")}">${n}</text>`;
@@ -547,15 +577,15 @@
   function renderRank() {
     const v = $("#view-rank");
     const s = scenario();
-    const labels = { atmosphere: "Atmosphere match", hazard: "Hazard relevance", scale: "Fire scale realism", data: "Data richness", recency: "Recency" };
+    const labels = { atmosphere: t("rn.atmosphere"), hazard: t("rn.hazard"), scale: t("rn.scale"), data: t("rn.data"), recency: t("rn.recency") };
     const colors = { atmosphere: "var(--flame)", hazard: "var(--ember)", scale: "var(--cool)", data: "var(--ok)", recency: "var(--warn)" };
     v.innerHTML = `
-      <div class="view-head"><div><h2>Mission Ranker</h2><p>Ranks every investigation for <strong>${esc(s.label)}</strong> (${s.o2}% O₂, ${s.p} kPa, ${s.g} g). Move the weights to reflect what your team values; the score and the reason for it update live.</p></div></div>
+      <div class="view-head"><div><h2>${t("rn.title")}</h2><p>${t("rn.desc", { s: esc(s.label), o2: fmt(s.o2), p: fmt(s.p), g: fmt(s.g) })}</p></div></div>
       <div class="split" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr)">
         <div class="panel controls">
           ${Object.keys(labels).map((k) => `<div class="ctrl"><label for="w-${k}"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${colors[k]};margin-right:6px"></i>${labels[k]}</span><output id="wo-${k}">${state.weights[k]}</output></label><input type="range" id="w-${k}" min="0" max="50" value="${state.weights[k]}"></div>`).join("")}
-          <button class="btn" id="w-reset" type="button">Reset weights</button>
-          <p class="note"><strong>Atmosphere match</strong>: distance between the mission atmosphere and the O₂ / pressure range tested. <strong>Hazard relevance</strong>: how much this fire type matters for the mission (e.g. solids for habitats). <strong>Scale</strong>: sample size up to spacecraft scale. <strong>Data richness</strong>: test count and public PSI data. <strong>Recency</strong>: newer hardware and diagnostics.</p>
+          <button class="btn" id="w-reset" type="button">${t("rn.reset")}</button>
+          <p class="note">${t("rn.note")}</p>
         </div>
         <div class="panel" id="rank-list"></div>
       </div>`;
@@ -569,43 +599,34 @@
     const r = M.rank(s, state.weights);
     $("#rank-list").innerHTML = r.map((x, n) => `
       <div class="rank-row"><span class="n">${n + 1}</span>
-        <div style="min-width:0"><button class="cite" data-inv="${x.inv.id}" type="button">${esc(x.inv.name)}</button> ${x.inv.planned ? '<span class="pill warn">planned</span>' : ""}<div class="why">${esc(x.why)}</div></div>
-        <div class="barcell"><div class="bar" title="Score contributions">${Object.keys(colors).map((k) => `<span style="width:${(x.parts[k] * state.weights[k]) / sumW * 100}%;background:${colors[k]}"></span>`).join("")}</div></div>
+        <div style="min-width:0"><button class="cite" data-inv="${x.inv.id}" type="button">${esc(x.inv.name)}</button> ${x.inv.planned ? `<span class="pill warn">${t("at.planned")}</span>` : ""}<div class="why">${esc(x.why)}</div></div>
+        <div class="barcell"><div class="bar" title="${esc(t("rn.contrib"))}">${Object.keys(colors).map((k) => `<span style="width:${(x.parts[k] * state.weights[k]) / sumW * 100}%;background:${colors[k]}"></span>`).join("")}</div></div>
         <span class="score">${x.score.toFixed(0)}</span></div>`).join("");
   }
 
   /* ---------------- ask ---------------- */
-  const SUGGEST = [
-    "Which investigations matter most for a lunar habitat?",
-    "Is Nomex flammable at 34% oxygen and 8.2 psi on the Moon?",
-    "Why don't Earth extinguisher standards apply in microgravity?",
-    "Compare BASS and Saffire",
-    "What did SAME learn about smoke detectors?",
-    "What are cool flames and why are they dangerous?",
-    "What research gaps remain for Mars missions?",
-  ];
   function renderAsk() {
     const v = $("#view-ask");
     if (v.dataset.init) { updateEngine(); return; }
     v.dataset.init = "1";
     v.innerHTML = `
-      <div class="view-head"><div><h2>Ask EMBER</h2><p>Ask in plain language. EMBER retrieves evidence from the curated NASA record, runs the flammability model when you mention a material or atmosphere, and answers with citations, a confidence level and research-gap warnings.</p></div><span class="engine" id="engine">Checking AI engine…</span></div>
+      <div class="view-head"><div><h2>${t("ask.title")}</h2><p>${t("ask.desc")}</p></div><span class="engine" id="engine">${t("ask.checking")}</span></div>
       <div class="split">
         <div class="panel chat">
           <div class="chat-log" id="chat-log" aria-live="polite"></div>
-          <form class="chat-form" id="chat-form"><textarea id="chat-in" rows="1" placeholder="e.g. How should we suppress a fabric fire in a lunar habitat?" aria-label="Your question"></textarea><button class="btn primary" type="submit">Ask</button></form>
+          <form class="chat-form" id="chat-form"><textarea id="chat-in" rows="1" placeholder="${esc(t("ask.placeholder"))}" aria-label="${esc(t("ask.aria"))}"></textarea><button class="btn primary" type="submit">${t("ask.send")}</button></form>
         </div>
         <div class="grid" style="align-content:start">
-          <div class="panel"><h3>Try asking</h3><div class="suggest" style="margin-top:10px">${SUGGEST.map((q) => `<button type="button">${esc(q)}</button>`).join("")}</div></div>
-          <div class="panel"><h3>How answers are built</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">
-            <li>BM25 retrieval over ${E.ai.getIndex() && E.model.buildChunks().length} evidence passages from investigations, insights, history and physics notes.</li>
-            <li>With Claude online, the passages and any model output go to Claude with strict instructions to answer only from them and cite every claim.</li>
-            <li>Offline, a local reasoner builds the answer from the same evidence, the flammability model and the mission ranker.</li>
-            <li>Every answer shows the evidence confidence and the data gaps it touches.</li></ul></div>
+          <div class="panel"><h3>${t("ask.try")}</h3><div class="suggest" style="margin-top:10px">${E.suggestions().map((q) => `<button type="button">${esc(q)}</button>`).join("")}</div></div>
+          <div class="panel"><h3>${t("ask.how")}</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">
+            <li>${t("ask.how1", { n: E.ai.getIndex() && E.model.buildChunks().length })}</li>
+            <li>${t("ask.how2")}</li>
+            <li>${t("ask.how3")}</li>
+            <li>${t("ask.how4")}</li></ul></div>
         </div>
       </div>`;
     const log = $("#chat-log");
-    pushBot({ text: `Hello. I'm EMBER. I know ${E.INVESTIGATIONS.length} NASA combustion investigations and the current mission context: **${scenario().label}**. Ask about materials, oxygen levels, detection, suppression or any investigation.`, cites: [], confidence: "", gaps: [], engine: "" });
+    pushBot({ text: t("ask.hello", { n: E.INVESTIGATIONS.length, s: scenario().label }), cites: [], confidence: "", gaps: [], engine: "" });
     $$(".suggest button", v).forEach((b) => b.addEventListener("click", () => send(b.textContent)));
     $("#chat-form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("#chat-in").value.trim(); if (t) send(t); });
     $("#chat-in").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#chat-form").requestSubmit(); } });
@@ -614,32 +635,32 @@
       const div = document.createElement("div");
       div.className = "msg bot";
       div.innerHTML = renderAnswer(res.text) +
-        (res.confidence || res.gaps.length ? `<div class="badge-row">${res.confidence ? `<span class="pill ${/High/.test(res.confidence) ? "ok" : /Medium/.test(res.confidence) ? "warn" : "crit"}">confidence: ${esc(res.confidence)}</span>` : ""}${res.gaps.map((g) => `<span class="pill warn" title="${esc(g)}">⚠ gap: ${esc(g.split(/[.(]/)[0])}</span>`).join("")}</div>` : "") +
+        (res.confidence || res.gaps.length ? `<div class="badge-row">${res.confidence ? `<span class="pill ${/High/.test(res.confidence) ? "ok" : /Medium/.test(res.confidence) ? "warn" : "crit"}">${esc(t("ask.conf", { c: lv(res.confidence) }))}</span>` : ""}${res.gaps.map((g) => `<span class="pill warn" title="${esc(g)}">⚠ ${t("ask.gap")}: ${esc(g.split(/[.(;]/)[0])}</span>`).join("")}</div>` : "") +
         (res.notice ? `<p class="note" style="margin-top:8px">${esc(res.notice)}</p>` : "") +
-        (res.engine ? `<div class="engine" style="margin-top:8px">${res.engine === "offline" ? "EMBER offline reasoner" : "Claude · " + esc(res.engine)}</div>` : "");
+        (res.engine ? `<div class="engine" style="margin-top:8px">${res.engine === "offline" ? t("eng.offline") : "Claude · " + esc(res.engine)}</div>` : "");
       log.appendChild(div);
       log.scrollTop = log.scrollHeight;
     }
     async function send(q) {
       $("#chat-in").value = "";
       const u = document.createElement("div"); u.className = "msg user"; u.textContent = q; log.appendChild(u);
-      const t = document.createElement("div"); t.className = "msg bot"; t.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>'; log.appendChild(t);
+      const typing = document.createElement("div"); typing.className = "msg bot"; typing.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>'; log.appendChild(typing);
       log.scrollTop = log.scrollHeight;
       try {
         const res = await E.ai.ask(q, scenario(), state.chat);
-        t.remove();
+        typing.remove();
         state.chat.push({ role: "user", content: q }, { role: "assistant", content: res.text });
         pushBot(res);
       } catch (e) {
-        t.remove();
-        pushBot({ text: `Something went wrong: ${e.message}. Please try again.`, cites: [], confidence: "", gaps: [], engine: "" });
+        typing.remove();
+        pushBot({ text: t("ask.error", { e: e.message }), cites: [], confidence: "", gaps: [], engine: "" });
       }
     }
   }
   async function updateEngine() {
     const on = await E.ai.checkOnline();
     const el = $("#engine");
-    if (el) el.innerHTML = on ? `AI engine: <b>Claude online</b> (${esc(on.model)})` : `AI engine: <b>offline reasoner</b> (deploy with an API key to enable Claude)`;
+    if (el) el.innerHTML = on ? t("ask.online", { m: esc(on.model) }) : t("ask.offline");
   }
 
   /* ---------------- gaps & earth ---------------- */
@@ -649,16 +670,17 @@
     E.INCIDENTS.forEach((x) => x.link && allSrc.set(x.link.url, x.link.label));
     E.SPINOFFS.forEach((x) => allSrc.set(x.link.url, x.link.label));
     $("#view-gaps").innerHTML = `
-      <div class="view-head"><div><h2>Research gaps and Earth benefits</h2><p>Where the NASA record runs out, which planned investigations will fill it, and how spacecraft fire research already protects people on Earth.</p></div></div>
+      <div class="view-head"><div><h2>${t("gp.title")}</h2><p>${t("gp.desc")}</p></div></div>
       <div class="grid g2">
-        ${E.GAPS.map((g) => `<div class="panel gap-card" style="border-left-color:var(--${g.severity === "crit" ? "crit" : g.severity === "warn" ? "warn" : "flame"})"><div class="panel-title"><h3>${esc(g.title)}</h3><span class="pill ${g.severity === "crit" ? "crit" : g.severity === "warn" ? "warn" : ""}">${g.severity === "crit" ? "critical" : g.severity === "warn" ? "important" : "watch"}</span></div><p style="font-size:.92rem">${esc(g.text)}</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${g.inv.map((id) => `<button class="cite" data-inv="${id}" type="button">${esc(invById(id).name)}</button>`).join("")}</div></div>`).join("")}
+        ${E.GAPS.map((g) => `<div class="panel gap-card" style="border-left-color:var(--${g.severity === "crit" ? "crit" : g.severity === "warn" ? "warn" : "flame"})"><div class="panel-title"><h3>${esc(g.title)}</h3><span class="pill ${g.severity === "crit" ? "crit" : g.severity === "warn" ? "warn" : ""}">${t("gp." + g.severity)}</span></div><p style="font-size:.92rem">${esc(g.text)}</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${g.inv.map((id) => `<button class="cite" data-inv="${id}" type="button">${esc(invById(id).name)}</button>`).join("")}</div></div>`).join("")}
       </div>
-      <h2>Earth benefits</h2>
+      <h2>${t("gp.earth")}</h2>
       <div class="grid g4">${E.SPINOFFS.map((x) => `<div class="panel spin-card"><div class="eyebrow">${esc(x.era)}</div><h3 style="margin:6px 0">${esc(x.title)}</h3><p style="font-size:.9rem">${esc(x.text)}</p><p style="margin-top:8px;font-size:.85rem"><a href="${x.link.url}" target="_blank" rel="noopener">${esc(x.link.label)}</a></p></div>`).join("")}</div>
-      <div class="panel"><h3>References</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">${[...allSrc].map(([u, l]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(l)}</a></li>`).join("")}<li>Material Limiting Oxygen Index values: typical ASTM D2863 literature values (reference only).</li></ul></div>`;
+      <div class="panel"><h3>${t("gp.refs")}</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">${[...allSrc].map(([u, l]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(l)}</a></li>`).join("")}<li>${t("gp.loi")}</li></ul></div>`;
   }
 
   /* ---------------- boot ---------------- */
+  E.initLang();
   initTop();
   updateChip();
   route();

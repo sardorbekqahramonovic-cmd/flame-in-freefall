@@ -4,6 +4,7 @@
  */
 (function () {
   const E = window.EMBER;
+  const t = (k, v) => (E.t ? E.t(k, v) : k);
   const G_EARTH_BUOYANT_FLOW = 30; // cm/s, typical buoyancy-induced flow at a burning surface in 1 g
 
   /* ---------------- Flammability model ----------------
@@ -46,11 +47,8 @@
     const loc1g = limitingO2(material, Math.sqrt(vent * vent + G_EARTH_BUOYANT_FLOW ** 2), 101.3);
     const margin = o2 - loc;
     const ppO2 = (o2 / 100) * p;
-    let state, cls, text;
-    if (margin < -3) { state = "Self-extinguishing"; cls = 0; text = "Oxygen is well below the estimated limit for this flow. A flame is not expected to spread."; }
-    else if (margin < 0) { state = "Near the limit"; cls = 1; text = "Within 3 points of the estimated limit. Small changes in flow or oxygen can make it burn."; }
-    else if (margin < 6) { state = "Flammable"; cls = 2; text = "Oxygen is above the estimated limit. A flame can spread over this material."; }
-    else { state = "Highly flammable"; cls = 3; text = "Oxygen is far above the estimated limit. Expect fast flame spread."; }
+    const cls = margin < -3 ? 0 : margin < 0 ? 1 : margin < 6 ? 2 : 3;
+    const state = t("st." + cls), text = t("stx." + cls);
     // relative spread index: opposed-flow spread grows roughly with O2 excess and ppO2
     const spreadIdx = margin <= 0 ? 0 : Math.min(10, (margin / 10) * Math.sqrt(ppO2 / 21.3) * 4);
     const coverage = evidenceCoverage({ o2, p, g, material });
@@ -80,20 +78,21 @@
       .map((i) => ({ inv: i, d: envDist(i, o2, p) }))
       .sort((a, b) => a.d - b.d);
     const inside = near.filter((x) => x.d === 0);
+    // level stays an English key ("High"…); the UI translates it with t("lv." + level)
     let level, note;
-    if (inside.length >= 2) { level = "High"; note = `${inside.length} solid-fuel investigations tested this O2 / pressure.`; }
-    else if (inside.length === 1) { level = "Medium"; note = `Only ${inside[0].inv.name} tested this O2 / pressure.`; }
-    else if (near[0] && near[0].d < 0.6) { level = "Low"; note = `Closest data: ${near[0].inv.name}. This point is an extrapolation.`; }
-    else { level = "Very low"; note = "No solid-fuel flight data near this atmosphere."; }
+    if (inside.length >= 2) { level = "High"; note = t("cov.many", { n: inside.length }); }
+    else if (inside.length === 1) { level = "Medium"; note = t("cov.one", { name: inside[0].inv.name }); }
+    else if (near[0] && near[0].d < 0.6) { level = "Low"; note = t("cov.near", { name: near[0].inv.name }); }
+    else { level = "Very low"; note = t("cov.none"); }
     const flags = [];
     if (g > 0 && g < 1) {
       const order = ["High", "Medium", "Low", "Very low"];
       level = order[Math.min(3, order.indexOf(level) + 1)];
-      note += " Gravity differs from the flight data, so confidence is reduced one level.";
+      note += " " + t("cov.gravity");
+      flags.push(t("flag.g"));
     }
-    if (g > 0 && g < 1) flags.push("No partial-gravity flight data exists in PSI. Lunar and Mars values are model extrapolations (FM2, FLARE planned).");
-    if (o2 > 40) flags.push("Above 40% O2, only gas-flame data (CFI-G, up to 85%) exists; no solid-material flight data.");
-    if (p < 50) flags.push("Below 50 kPa only SoFIE's chamber reaches this range.");
+    if (o2 > 40) flags.push(t("flag.o2"));
+    if (p < 50) flags.push(t("flag.p"));
     return { level, note, near: near.slice(0, 3), flags };
   }
 
@@ -128,13 +127,15 @@
 
   function explain(inv, parts, sc) {
     const bits = [];
-    if (parts.atmosphere > 0.85) bits.push(inv.planned ? `planned to cover ${sc.label.toLowerCase()} conditions` : `tested at ${sc.label.toLowerCase()} O2 / pressure`);
-    else if (parts.atmosphere < 0.3) bits.push(`tested far from ${sc.o2}% O2 / ${sc.p} kPa`);
-    if (parts.scale > 0.8) bits.push("spacecraft-scale fire");
-    if (parts.data > 0.8) bits.push("large public dataset");
-    if (inv.planned) bits.push("fills the partial-gravity gap");
-    if (inv.category === "detection") bits.push("drives detector design");
-    if (inv.id === "FLEX") bits.push("sets suppressant margins");
+    const label = E.lang && E.lang !== "en" ? sc.label : sc.label.toLowerCase();
+    const fmt = E.fmt || String;
+    if (parts.atmosphere > 0.85) bits.push(t(inv.planned ? "why.plannedCover" : "why.tested", { s: label }));
+    else if (parts.atmosphere < 0.3) bits.push(t("why.far", { o2: fmt(sc.o2), p: fmt(sc.p) }));
+    if (parts.scale > 0.8) bits.push(t("why.scale"));
+    if (parts.data > 0.8) bits.push(t("why.data"));
+    if (inv.planned) bits.push(t("why.gap"));
+    if (inv.category === "detection") bits.push(t("why.detector"));
+    if (inv.id === "FLEX") bits.push(t("why.suppressant"));
     return bits.slice(0, 3).join(" · ") || E.CATEGORIES[inv.category].label.toLowerCase();
   }
 
@@ -162,7 +163,26 @@
     cool: ["cool", "low-temperature"],
     pressure: ["psia", "kpa"],
   };
+  // Russian and Uzbek: stop words, a few canonical stems and synonyms (keys are stems)
+  const STOP_X = new Set(("и в во на с со по для что как это не при из от до или а но ли же о об к у за ли ни бы то так все его её их мы вы он она они "
+    + "какие какой какая каких почему зачем где когда чем есть был была были будет можно нужно ещё также очень "
+    + "va bilan uchun bu u ular qanday nima nimani qaysi nega qayerda qachon da ham esa emas kabi yoki lekin bir har men biz siz edi bo'ladi "
+    + "haqida bo'yicha boshqa yana juda").split(/\s+/).map((w) => w.replace(/['ʻʼ’‘`]/g, "")));
+  const CANON = [["лун", "лун"], ["марс", "марс"], ["дым", "дым"], ["туш", "туш"], ["огнету", "туш"], ["oyda", "oy"], ["oydagi", "oy"]];
+  const SYN_X = {
+    "туш": ["подавление", "затухание"], "подав": ["туш"], "дым": ["датчик", "обнаружение", "аэрозоль", "частицы"], "датчи": ["обнаружение", "дым"],
+    "лун": ["частичная"], "марс": ["частичная"], "ткань": ["ткани", "хлопок", "sibal", "nomex"], "пласт": ["pmma", "акрил"], "сажа": ["сажи", "дым"],
+    "ochir": ["so'nish", "o'chiruvchi"], "tutun": ["aniqlash", "datchik", "aerozol", "zarracha"], "datch": ["aniqlash", "tutun"],
+    "oy": ["qisman"], "mars": ["qisman"], "mato": ["matolar", "paxta", "sibal", "nomex"], "qurum": ["tutun"], "plast": ["pmma", "akril"],
+  };
+  function tokensX(s) {
+    return (s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/['ʻʼ’‘`]/g, "").match(/[\p{L}\p{N}][\p{L}\p{N}\-]*/gu) || [])
+      .filter((w) => !STOP.has(w) && !STOP_X.has(w))
+      .map((w) => { const c = CANON.find(([p]) => w.startsWith(p)); return c ? c[1] : w.length > 5 ? w.slice(0, 5) : w; })
+      .filter((w) => w.length > 1);
+  }
   function tokens(s) {
+    if (E.lang && E.lang !== "en") return tokensX(s);
     return (s.toLowerCase().normalize("NFKD").match(/[a-z0-9][a-z0-9\-]*/g) || [])
       .map((t) => t.replace(/(ing|ed|es|s)$/, (m) => (t.length > 5 ? "" : m)))
       .filter((t) => !STOP.has(t) && t.length > 1);
@@ -170,25 +190,28 @@
   function expand(q) {
     const t = tokens(q);
     const out = [...t];
-    t.forEach((w) => (SYN[w] || []).forEach((s) => out.push(...tokens(s))));
+    const syn = E.lang && E.lang !== "en" ? SYN_X : SYN;
+    t.forEach((w) => (syn[w] || []).forEach((s) => out.push(...tokens(s))));
     return out;
   }
 
   function buildChunks() {
     const chunks = [];
+    const fmt = E.fmt || String;
+    const r2 = (a) => `${fmt(a[0])}–${fmt(a[1])}`;
     E.INVESTIGATIONS.forEach((inv) => {
-      const cond = `Conditions: O2 ${inv.o2[0]}–${inv.o2[1]}%, pressure ${inv.p[0]}–${inv.p[1]} kPa, flow ${inv.flow[0]}–${inv.flow[1]} cm/s.`;
-      chunks.push({ id: `${inv.id}`, inv: inv.id, title: `${inv.name}: ${inv.full}`, text: `${inv.name} (${inv.full}), ${inv.years[0]}${inv.years[1] !== inv.years[0] ? "–" + inv.years[1] : ""}, ${inv.platform}. Objective: ${inv.objectives} Fuels: ${inv.fuels}. ${cond} Diagnostics: ${inv.sensors.join(", ")}.` });
-      inv.findings.forEach((f, i) => chunks.push({ id: `${inv.id}#${i + 1}`, inv: inv.id, title: `${inv.name} finding ${i + 1}`, text: `${inv.name}: ${f}` }));
+      const cond = t("ch.cond", { o2: r2(inv.o2), p: r2(inv.p), f: r2(inv.flow) });
+      chunks.push({ id: `${inv.id}`, inv: inv.id, title: `${inv.name}: ${inv.full}`, text: `${inv.name} (${inv.full}), ${inv.years[0]}${inv.years[1] !== inv.years[0] ? "–" + inv.years[1] : ""}, ${inv.platform}. ${t("ch.objective")}: ${inv.objectives} ${t("ch.fuels")}: ${inv.fuels}. ${cond} ${t("ch.diag")}: ${inv.sensors.join(", ")}.` });
+      inv.findings.forEach((f, i) => chunks.push({ id: `${inv.id}#${i + 1}`, inv: inv.id, title: `${inv.name} ${t("ch.finding")} ${i + 1}`, text: `${inv.name}: ${f}` }));
       ["prevention", "detection", "suppression"].forEach((k) => {
-        if (inv.implications[k]) chunks.push({ id: `${inv.id}:${k}`, inv: inv.id, title: `${inv.name} · ${k}`, text: `${inv.name} fire-safety implication for ${k}: ${inv.implications[k]}` });
+        if (inv.implications[k]) chunks.push({ id: `${inv.id}:${k}`, inv: inv.id, title: `${inv.name} · ${t("layer." + k)}`, text: `${inv.name}, ${t("ch.impl", { k: t("layer." + k).toLowerCase() })}: ${inv.implications[k]}` });
       });
     });
-    E.INSIGHTS.forEach((s) => chunks.push({ id: `INSIGHT-${s.rank}`, inv: s.cites[0], title: s.title, text: `${s.title}. ${s.text} Action: ${s.action}` }));
+    E.INSIGHTS.forEach((s) => chunks.push({ id: `INSIGHT-${s.rank}`, inv: s.cites[0], title: s.title, text: `${s.title}. ${s.text} ${t("ch.action")}: ${s.action}` }));
     E.INCIDENTS.filter((x) => x.kind === "incident").forEach((x) => chunks.push({ id: `HIST-${x.year}`, title: `${x.year} ${x.title}`, text: `${x.year} ${x.title}: ${x.text}` }));
-    E.GAPS.forEach((g, i) => chunks.push({ id: `GAP-${i + 1}`, inv: g.inv[0], title: `Research gap: ${g.title}`, text: `Research gap: ${g.title}. ${g.text}` }));
-    E.SCENARIOS.forEach((s) => chunks.push({ id: `ATM-${s.id}`, title: `Atmosphere: ${s.label}`, text: `${s.label} atmosphere: ${s.o2}% O2 at ${s.p} kPa (${(s.p / 6.895).toFixed(1)} psia), gravity ${s.g} g. ${s.note}` }));
-    E.SPINOFFS.forEach((s, i) => chunks.push({ id: `EARTH-${i + 1}`, title: `Earth benefit: ${s.title}`, text: `Earth benefit (${s.era}): ${s.title}. ${s.text}` }));
+    E.GAPS.forEach((g, i) => chunks.push({ id: `GAP-${i + 1}`, inv: g.inv[0], title: `${t("ch.gap")}: ${g.title}`, text: `${t("ch.gap")}: ${g.title}. ${g.text}` }));
+    E.SCENARIOS.forEach((s) => chunks.push({ id: `ATM-${s.id}`, title: `${t("cite.ATM")}: ${s.label}`, text: t("ch.atm", { s: s.label, o2: fmt(s.o2), p: fmt(s.p), psia: fmt((s.p / 6.895).toFixed(1)), g: fmt(s.g), note: s.note }) }));
+    E.SPINOFFS.forEach((s, i) => chunks.push({ id: `EARTH-${i + 1}`, title: `${t("ch.earth")}: ${s.title}`, text: `${t("ch.earth")} (${s.era}): ${s.title}. ${s.text}` }));
     E.PRIMER.forEach((p, i) => chunks.push({ id: `PHYS-${i + 1}`, title: p.title, text: `${p.title}. ${p.text}` }));
     return chunks;
   }

@@ -5,8 +5,13 @@ globalThis.window = {};
 const require = createRequire(import.meta.url);
 require("../data/investigations.js");
 require("../data/insights.js");
+require("../data/l10n-ru.js");
+require("../data/l10n-uz.js");
+require("../i18n.js");
 require("../model.js");
+require("../ai.js");
 const E = window.EMBER, M = E.model;
+E.setLang("en");
 
 for (const m of E.MATERIALS) {
   // calibration: at 1 g, sea level, no ventilation, the limit equals the LOI
@@ -39,4 +44,36 @@ for (const s of E.INSIGHTS) for (const c of s.cites) assert.ok(E.INVESTIGATIONS.
 // retrieval finds SAME for a smoke-detector question
 const idx = M.makeIndex(M.buildChunks());
 assert.equal(idx.search("smoke detector particle size")[0].c.inv, "SAME");
-console.log("All EMBER model checks passed.");
+
+// ---- languages: every interface string exists in all three languages ----
+for (const lang of ["ru", "uz"]) {
+  E.setLang(lang);
+  const L = E.L10N[lang];
+  // translated records keep their structure (same ids, same number of findings)
+  for (const [id, tr] of Object.entries(L.inv)) {
+    const orig = E.origInv(id);
+    assert.ok(orig, `${lang}: unknown investigation ${id}`);
+    if (tr.findings) assert.equal(tr.findings.length, orig.findings.length, `${lang} ${id}: findings count`);
+    if (tr.sensors) assert.equal(tr.sensors.length, orig.sensors.length, `${lang} ${id}: sensors count`);
+  }
+  assert.equal(Object.keys(L.inv).length, E.INVESTIGATIONS.length, `${lang}: all investigations translated`);
+  assert.equal(L.gap.length, E.GAPS.length); assert.equal(L.inc.length, E.INCIDENTS.length);
+  assert.equal(L.spin.length, E.SPINOFFS.length); assert.equal(L.prim.length, E.PRIMER.length);
+  assert.equal(Object.keys(L.ins).length, E.INSIGHTS.length);
+  // model output is translated, numbers are unchanged
+  const a = M.assess({ o2: 34, p: 56.5, g: 0.166, vent: 15, materialId: "nomex" });
+  assert.ok(a.cls >= 2 && a.state !== "Flammable" && a.state.length > 3, `${lang}: state ${a.state}`);
+  // retrieval in the interface language
+  const q = lang === "ru" ? "датчики дыма и размер частиц" : "tutun datchiklari va zarracha o'lchami";
+  assert.equal(M.makeIndex(M.buildChunks()).search(q)[0].c.inv, "SAME", `${lang}: smoke query`);
+  // offline answers parse conditions written with a decimal comma
+  const res = await E.ai.ask(lang === "ru" ? "Горит ли Nomex при 34% кислорода и 8,2 psi на Луне?" : "Oyda 34% kislorod va 8,2 psi'da Nomex yonadimi?", E.SCENARIOS[1]);
+  assert.match(res.text, /Nomex/); assert.match(res.text, /34% O₂/); assert.ok(res.gaps.length >= 2, `${lang}: gap flags`);
+  for (const sug of E.suggestions()) {
+    const r = await E.ai.ask(sug, E.SCENARIOS[1]);
+    assert.ok(r.text.split("\n").length >= 2, `${lang}: thin answer for "${sug}"`);
+  }
+}
+E.setLang("en");
+assert.equal(M.assess({ o2: 21, p: 101.3, g: 0, vent: 10, materialId: "nomex" }).state, "Self-extinguishing");
+console.log("All EMBER model and language checks passed.");

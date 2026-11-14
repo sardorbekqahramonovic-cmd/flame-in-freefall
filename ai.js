@@ -9,13 +9,42 @@
 (function () {
   const E = window.EMBER;
   const API = (window.EMBER_CONFIG && window.EMBER_CONFIG.apiUrl) || "api/ask";
-  let index = null;
+  const indexes = {}; // one retrieval index per interface language
   let online = null; // null = unknown, false, or { model }
+  const t = (k, v) => E.t(k, v);
+  const fmt = (v) => E.fmt(v);
+  // lower-case and unify apostrophes (Uzbek o' / g' are typed many ways)
+  const norm = (q) => q.toLowerCase().replace(/[ʻʼ’‘`]/g, "'").replace(/[–]/g, "-");
 
   function getIndex() {
-    if (!index) index = E.model.makeIndex(E.model.buildChunks());
-    return index;
+    const k = E.lang || "en";
+    if (!indexes[k]) indexes[k] = E.model.makeIndex(E.model.buildChunks());
+    return indexes[k];
   }
+
+  /* question patterns in English, Russian and Uzbek */
+  const RX = {
+    compare: /compar|differ|\bvs\b|versus|between|similar|сравн|разниц|отлич|между|taqqos|farq|solishtir/,
+    rank: /rank|most relevant|which (investigation|experiment|study)|top \d|prioriti|most important|наиболее важн|самые важн|какие исследов|какие эксперимент|рейтинг|приоритет|eng muhim|qaysi tadqiqot|qaysi tajriba|reyting|ustuvor/,
+    suppress: /suppress|extinguish|put out|fight|туш|подавл|o'chir|o'chg|söndir/,
+    detect: /detect|smoke|alarm|sensor|обнаруж|дым|датчик|сигнализ|tutun|aniqla|datchik|sensor|signal/,
+    prevent: /prevent|material|select|flammab|профилакт|предотвр|материал|горюч|oldini|material|yonuvchan/,
+    moon: /\b(moon|lunar)\b|лун|\boy(da|dagi|ga|ning)?\b/,
+    mars: /\bmars|martian\b|марс/,
+    earth: /\b(earth|1 ?g|normal gravity)\b|на земле|обычной гравитац|oddiy gravitatsiya/,
+    micro: /\b(microgravity|orbit|iss|station|zero.?g|transit)\b|микрогравит|невесом|орбит|мкс|mikrogravit|orbita|\bxks/,
+    partial: /moon|lunar|mars|partial|reduced.?g|лун|марс|частичн|пониженн\w* гравит|\boy(da|dagi|ga)?\b|qisman/,
+    highO2: /high.?oxygen|enriched|34%|30%|exploration atm|8[.,]2|10[.,]2|обогащ|высок\w* (содержан\w* )?кислор|yuqori kislorod|boyitilgan/,
+    battery: /battery|lithium|li-ion|аккумул|батаре|лити|akkumul|batare|litiy/,
+  };
+  // material names and common words in the three languages (most specific first)
+  const MAT_ALIAS = [
+    ["nomex", ["nomex", "номекс"]], ["kapton", ["kapton", "каптон", "polyimide", "полиимид", "poliimid"]],
+    ["ptfe", ["teflon", "ptfe", "тефлон"]], ["silicone", ["silicone", "силикон", "silikon"]],
+    ["pc", ["polycarbonate", "lexan", "поликарбонат", "polikarbonat"]], ["pmma", ["pmma", "acrylic", "акрил", "akril", "plexiglas", "оргстекл"]],
+    ["pe", ["polyethylene", "полиэтилен", "polietilen"]], ["paper", ["paper", "бумаг", "qog'oz", "cellulose", "целлюлоз", "tsellyuloza"]],
+    ["sibal", ["sibal", "cotton", "fiberglass", "fabric", "хлоп", "ткан", "paxta", "mato"]],
+  ];
 
   async function checkOnline() {
     if (online !== null) return online;
@@ -34,25 +63,23 @@
 
   /* ---------- parse physical conditions out of a question ---------- */
   function parseConditions(q, scenario) {
-    const s = q.toLowerCase();
+    const s = norm(q);
     const out = {};
-    const o2m = s.match(/(\d{1,3}(?:\.\d+)?)\s*%\s*(?:o2|oxygen)?/);
-    if (o2m) out.o2 = Math.min(100, parseFloat(o2m[1]));
-    const psi = s.match(/(\d{1,2}(?:\.\d+)?)\s*psi/);
-    const kpa = s.match(/(\d{1,3}(?:\.\d+)?)\s*kpa/);
-    const atm = s.match(/(\d(?:\.\d+)?)\s*atm/);
-    if (psi) out.p = parseFloat(psi[1]) * 6.895;
-    else if (kpa) out.p = parseFloat(kpa[1]);
-    else if (atm) out.p = parseFloat(atm[1]) * 101.3;
-    if (/\b(moon|lunar)\b/.test(s)) out.g = 0.166;
-    else if (/\bmars|martian\b/.test(s)) out.g = 0.378;
-    else if (/\b(earth|1 ?g|normal gravity)\b/.test(s)) out.g = 1;
-    else if (/\b(microgravity|orbit|iss|station|zero.?g|transit)\b/.test(s)) out.g = 0;
-    const mat = E.MATERIALS.find((m) => {
-      const key = m.label.toLowerCase();
-      return [m.id, ...key.split(/[^a-z]+/).filter((w) => w.length > 4)].some((w) => new RegExp(`\\b${w}`).test(s));
-    });
-    if (mat) out.materialId = mat.id;
+    const num = (x) => parseFloat(x.replace(",", "."));
+    const o2m = s.match(/(\d{1,3}(?:[.,]\d+)?)\s*%/);
+    if (o2m) out.o2 = Math.min(100, num(o2m[1]));
+    const psi = s.match(/(\d{1,2}(?:[.,]\d+)?)\s*(?:psi|пси)/);
+    const kpa = s.match(/(\d{1,3}(?:[.,]\d+)?)\s*(?:kpa|кпа)/);
+    const atm = s.match(/(\d(?:[.,]\d+)?)\s*(?:atm|атм)/);
+    if (psi) out.p = num(psi[1]) * 6.895;
+    else if (kpa) out.p = num(kpa[1]);
+    else if (atm) out.p = num(atm[1]) * 101.3;
+    if (RX.moon.test(s)) out.g = 0.166;
+    else if (RX.mars.test(s)) out.g = 0.378;
+    else if (RX.earth.test(s)) out.g = 1;
+    else if (RX.micro.test(s)) out.g = 0;
+    const mat = MAT_ALIAS.find(([, words]) => words.some((w) => s.includes(w)));
+    if (mat) out.materialId = mat[0];
     const has = out.o2 !== undefined || out.materialId || out.p !== undefined;
     if (!has) return null;
     return {
@@ -65,7 +92,7 @@
   }
 
   function detectInvs(q) {
-    const s = q.toLowerCase().replace(/[–]/g, "-");
+    const s = norm(q);
     const found = [];
     // exact full names first (e.g. "bass-ii", "cfi-g", "flex-2")
     E.INVESTIGATIONS.forEach((i) => {
@@ -83,31 +110,31 @@
   }
 
   function gapFlags(q, cond) {
-    const s = q.toLowerCase();
+    const s = norm(q);
     const flags = [];
-    if (/moon|lunar|mars|partial|reduced.?g/.test(s) || (cond && cond.g > 0 && cond.g < 1)) flags.push("No partial-gravity combustion data in PSI yet (FM2, FLARE planned).");
-    if (/high.?oxygen|enriched|34%|30%|exploration atm|8\.2|10\.2/.test(s) || (cond && cond.o2 > 27)) flags.push("Solid-material flight data above 27% O2 is limited to Saffire IV–VI and SoFIE.");
-    if (/battery|lithium|li-ion/.test(s)) flags.push("Battery thermal runaway is not covered by PSI combustion investigations.");
+    if (RX.partial.test(s) || (cond && cond.g > 0 && cond.g < 1)) flags.push(t("gapf.g"));
+    if (RX.highO2.test(s) || (cond && cond.o2 > 27)) flags.push(t("gapf.o2"));
+    if (RX.battery.test(s)) flags.push(t("gapf.bat"));
     return flags;
   }
 
   function firstSentences(t, n = 2) {
-    const parts = t.split(/(?<=[.!?])\s+(?=[A-Z0-9])/);
+    const parts = t.split(/(?<=[.!?])\s+(?=[\p{Lu}0-9])/u);
     return parts.slice(0, n).join(" ").trim();
   }
   function chunkLine(c) {
     const inv = c.inv && E.INVESTIGATIONS.find((i) => i.id === c.inv);
-    if (inv && c.id === inv.id) return `${inv.name} set out to ${inv.objectives.charAt(0).toLowerCase() + inv.objectives.slice(1)}`;
-    if (inv && c.id.includes(":")) { const k = c.id.split(":")[1]; return `**${k[0].toUpperCase() + k.slice(1)}:** ${inv.implications[k]}`; }
+    if (inv && c.id === inv.id) return t("ai.setOut", { name: inv.name, obj: /^\p{Lu}\p{Ll}/u.test(inv.objectives) ? inv.objectives.charAt(0).toLowerCase() + inv.objectives.slice(1) : inv.objectives });
+    if (inv && c.id.includes(":")) { const k = c.id.split(":")[1]; return `**${t("layer." + k)}:** ${inv.implications[k]}`; }
     if (inv && c.id.includes("#")) return firstSentences(c.text.replace(/^[^:]+:\s*/, ""), 2);
     return firstSentences(c.text, 2);
   }
-  const rng = (a, u) => (a[0] === a[1] ? `${a[0]}${u}` : `${a[0]}–${a[1]}${u}`);
+  const rng = (a, u) => (a[0] === a[1] ? `${fmt(a[0])}${u}` : `${fmt(a[0])}–${fmt(a[1])}${u}`);
 
   /* re-weight hits toward the fire-safety layer the question is about */
   function topical(q, hits, cond) {
-    const s = q.toLowerCase();
-    const layer = /suppress|extinguish|put out|fight/.test(s) ? "suppress" : /detect|smoke|alarm|sensor/.test(s) ? "detect" : /prevent|material|select|flammab/.test(s) ? "prevent" : null;
+    const s = norm(q);
+    const layer = RX.suppress.test(s) ? "suppress" : RX.detect.test(s) ? "detect" : RX.prevent.test(s) ? "prevent" : null;
     return hits
       .filter((h) => !(cond && h.c.id.startsWith("ATM")))
       .map((h) => {
@@ -118,7 +145,7 @@
       .sort((a, b) => b.s - a.s);
   }
   function overlap(a, b) {
-    const A = new Set(a.toLowerCase().match(/[a-z0-9]{4,}/g) || []), B = new Set(b.toLowerCase().match(/[a-z0-9]{4,}/g) || []);
+    const A = new Set(a.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) || []), B = new Set(b.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) || []);
     let n = 0; A.forEach((w) => B.has(w) && n++);
     return n / Math.max(1, Math.min(A.size, B.size));
   }
@@ -129,43 +156,44 @@
     const cond = parseConditions(q, scenario);
     const hits = topical(q, idx.search(q, 14), cond).slice(0, 8);
     const invs = detectInvs(q);
-    const s = q.toLowerCase();
+    const s = norm(q);
     const lines = [];
     const cites = new Set();
+    const n1 = (v) => E.num(v, 1);
 
-    const wantsCompare = invs.length >= 2 && /compar|differ|vs|versus|between|similar/.test(s);
-    const wantsRank = /rank|most relevant|which (investigation|experiment|study)|top \d|prioriti|most important/.test(s);
+    const wantsCompare = invs.length >= 2 && RX.compare.test(s);
+    const wantsRank = RX.rank.test(s);
 
     if (wantsCompare) {
-      lines.push(`**Comparison of ${invs.map((i) => i.name).join(", ")}**`);
+      lines.push(`**${t("ai.compare", { list: invs.map((i) => i.name).join(", ") })}**`);
       invs.slice(0, 3).forEach((i) => {
-        lines.push(`- **${i.name}** (${i.years[0]}${i.years[1] !== i.years[0] ? "–" + i.years[1] : ""}, ${E.CATEGORIES[i.category].label.toLowerCase()}): ${i.fuels.split(";")[0]}. O2 ${rng(i.o2, "%")}, ${rng(i.p, " kPa")}, flow ${rng(i.flow, " cm/s")}. Key result: ${i.findings[0]} [${i.id}]`);
+        lines.push("- " + t("ai.cmpLine", { name: i.name, years: `${i.years[0]}${i.years[1] !== i.years[0] ? "–" + i.years[1] : ""}`, cat: E.CATEGORIES[i.category].label.toLowerCase(), fuels: i.fuels.split(";")[0], o2: rng(i.o2, "%"), p: rng(i.p, " " + t("u.kpa")), flow: rng(i.flow, " " + t("u.cms")), f: i.findings[0] }) + ` [${i.id}]`);
         cites.add(i.id);
       });
-      const shared = invs.every((i) => i.platform.includes("CIR")) ? "They share the Combustion Integrated Rack." : invs.every((i) => i.platform.includes("MSG")) ? "They share the Microgravity Science Glovebox." : "They used different flight hardware.";
+      const shared = invs.every((i) => i.platform.includes("CIR")) ? t("ai.shareCIR") : invs.every((i) => i.platform.includes("MSG")) ? t("ai.shareMSG") : t("ai.shareNone");
       lines.push(shared);
     } else if (wantsRank) {
       const r = E.model.rank(scenario);
-      lines.push(`**Most relevant investigations for ${scenario.label}** (${scenario.o2}% O2, ${scenario.p} kPa, ${scenario.g} g):`);
+      lines.push(t("ai.rankHead", { s: scenario.label, o2: fmt(scenario.o2), p: fmt(scenario.p), g: fmt(scenario.g) }));
       r.slice(0, 5).forEach((x, n) => {
-        lines.push(`- ${n + 1}. **${x.inv.name}**, score ${x.score.toFixed(0)}/100: ${x.why}. [${x.inv.id}]`);
+        lines.push("- " + t("ai.rankLine", { n: n + 1, name: x.inv.name, sc: x.score.toFixed(0), why: x.why }) + ` [${x.inv.id}]`);
         cites.add(x.inv.id);
       });
-      lines.push("Scores combine atmosphere match, hazard relevance, fire scale, data richness and recency. Adjust the weights in the Mission Ranker.");
+      lines.push(t("ai.rankFoot"));
     }
 
     if (cond) {
       const a = E.model.assess(cond);
-      lines.push(`**Model estimate for ${a.material.label}** at ${cond.o2}% O2, ${cond.p.toFixed(1)} kPa (${(cond.p / 6.895).toFixed(1)} psia), ${cond.g} g:`);
-      lines.push(`- Estimated limiting O2: **${a.loc.toFixed(1)}%** (at 1 g sea level: ${a.loc1g.toFixed(1)}%). Margin: ${a.margin >= 0 ? "+" : ""}${a.margin.toFixed(1)} points → **${a.state}**.`);
-      lines.push(`- Effective flow at the flame ≈ ${a.uEff.toFixed(1)} cm/s (ventilation ${cond.vent} cm/s, buoyant ${a.ub.toFixed(1)} cm/s). Evidence coverage: ${a.coverage.level}. ${a.coverage.note}`);
+      lines.push(t("ai.modelHead", { m: a.material.label, o2: fmt(cond.o2), p: n1(cond.p), psia: n1(cond.p / 6.895), g: fmt(cond.g) }));
+      lines.push("- " + t("ai.model1", { loc: n1(a.loc), loc1: n1(a.loc1g), m: (a.margin >= 0 ? "+" : "") + n1(a.margin), st: a.state }));
+      lines.push("- " + t("ai.model2", { u: n1(a.uEff), v: fmt(cond.vent), b: n1(a.ub), lv: t("lv." + a.coverage.level), note: a.coverage.note }));
       a.coverage.near.slice(0, 2).forEach((n) => cites.add(n.inv.id));
     }
 
     if (!wantsCompare && !wantsRank) {
       const used = hits.filter((h) => h.c.inv || h.c.id.startsWith("PHYS") || h.c.id.startsWith("HIST") || h.c.id.startsWith("GAP") || h.c.id.startsWith("ATM") || h.c.id.startsWith("EARTH")).slice(0, cond ? 3 : 5);
       if (used.length) {
-        if (!cond) lines.push("**What the NASA record shows:**");
+        if (!cond) lines.push(t("ai.record"));
         const perInv = {}, said = [];
         used.forEach((h) => {
           const k = h.c.inv || h.c.id;
@@ -176,11 +204,11 @@
           if (h.c.inv) cites.add(h.c.inv);
         });
       } else if (!cond) {
-        lines.push("I could not find this topic in the curated NASA combustion record. Try naming an investigation (BASS, FLEX, Saffire, SAME, ACME), a material, or a hazard such as smoke, suppression or oxygen.");
+        lines.push(t("ai.notFound"));
       }
-      const tag = /suppress|extinguish/.test(s) ? "suppression" : /detect|smoke|alarm/.test(s) ? "detection" : null;
+      const tag = RX.suppress.test(s) ? "suppression" : RX.detect.test(s) ? "detection" : null;
       const ins = (tag && E.INSIGHTS.find((x) => x.tags.includes(tag) && (x.cites.some((c) => cites.has(c)) || hits.some((h) => h.c.id === `INSIGHT-${x.rank}`)))) || (tag && E.INSIGHTS.find((x) => x.tags.includes(tag))) || E.INSIGHTS.find((x) => hits.some((h) => h.c.id === `INSIGHT-${x.rank}`));
-      if (ins) lines.push(`**Recommended action:** ${ins.action}`);
+      if (ins) lines.push(t("ai.action", { a: ins.action }));
     }
 
     const top = hits[0] ? hits[0].s : 0;
@@ -206,9 +234,10 @@
         scenario: { label: scenario.label, o2: scenario.o2, p: scenario.p, g: scenario.g },
         contexts: contexts.slice(0, 12),
         history: history.slice(-6),
+        lang: E.lang || "en",
       }),
     });
-    if (!r.ok) throw new Error(`AI service returned ${r.status}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const j = await r.json();
     if (!j.answer) throw new Error(j.error || "Empty answer");
     const cites = [...new Set((j.answer.match(/\[([A-Za-z0-9\-#:]+)\]/g) || []).map((m) => m.slice(1, -1).split(/[#:]/)[0]))].filter((id) => E.INVESTIGATIONS.some((i) => i.id === id));
@@ -219,7 +248,7 @@
     const on = await checkOnline();
     if (on) {
       try { return await onlineAnswer(q, scenario, history); }
-      catch (e) { const res = offlineAnswer(q, scenario); res.notice = `Claude was unreachable (${e.message}); answered with the offline reasoner.`; return res; }
+      catch (e) { const res = offlineAnswer(q, scenario); res.notice = t("ask.unreachable", { e: e.message }); return res; }
     }
     return offlineAnswer(q, scenario);
   }
@@ -232,13 +261,15 @@
       try { return await onlineAnswer(q, scenario, []); } catch (e) { /* fall through */ }
     }
     const d = E.model.envDist(inv, scenario.o2, scenario.p);
-    const match = d === 0 ? `It was tested inside the ${scenario.label.toLowerCase()} atmosphere (${scenario.o2}% O2, ${scenario.p} kPa), so its results apply directly.` : d < 0.6 ? `It was tested near, but not at, the ${scenario.label.toLowerCase()} atmosphere; results need modest extrapolation.` : `It was tested far from the ${scenario.label.toLowerCase()} atmosphere (${inv.o2[0]}–${inv.o2[1]}% O2, ${inv.p[0]}–${inv.p[1]} kPa vs ${scenario.o2}% / ${scenario.p} kPa); treat results as trends, not numbers.`;
+    const label = E.lang === "en" ? scenario.label.toLowerCase() : scenario.label;
+    const v = { s: label, o2: fmt(scenario.o2), p: fmt(scenario.p), io2: `${fmt(inv.o2[0])}–${fmt(inv.o2[1])}`, ip: `${fmt(inv.p[0])}–${fmt(inv.p[1])}` };
+    const match = t(d === 0 ? "it.match0" : d < 0.6 ? "it.match1" : "it.match2", v);
     const lines = [
-      `**${inv.name} for ${scenario.label}.** ${match}`,
-      `- Key result: ${inv.findings[0]} [${inv.id}]`,
+      t("it.head", { name: inv.name, s: scenario.label, m: match }),
+      "- " + t("it.key", { f: inv.findings[0] }) + ` [${inv.id}]`,
     ];
-    ["prevention", "detection", "suppression"].forEach((k) => { if (inv.implications[k]) lines.push(`- ${k[0].toUpperCase() + k.slice(1)}: ${inv.implications[k]}`); });
-    if (scenario.g > 0 && !inv.gravity) lines.push(`- Limit: flown in microgravity, while this mission runs at ${scenario.g} g. Partial-gravity behaviour is not yet measured.`);
+    ["prevention", "detection", "suppression"].forEach((k) => { if (inv.implications[k]) lines.push(`- ${t("layer." + k)}: ${inv.implications[k]}`); });
+    if (scenario.g > 0 && !inv.gravity) lines.push("- " + t("it.limit", { g: fmt(scenario.g) }));
     return { text: lines.join("\n"), cites: [inv.id], confidence: d === 0 ? "High" : d < 0.6 ? "Medium" : "Low", gaps: [], engine: "offline" };
   }
 
