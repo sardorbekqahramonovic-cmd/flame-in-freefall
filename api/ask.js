@@ -25,9 +25,19 @@ Rules:
 - Rocket and propellant fires are out of scope.
 - The mission context line is the cabin atmosphere the user picked in the app, not the natural atmosphere of the Moon or Mars. Say "in a cabin at ..." when you use it. Mars air is thin carbon dioxide and cannot sustain a fire; fires happen inside pressurised habitats, rovers and suits.`;
 
-// Model-specific spelling slips seen in Uzbek output, fixed after the answer arrives.
-const UZ_FIXES = [[/(^|[^\p{L}])([Ll])akin(?![\p{L}])/gu, (m, a, l) => a + (l === "L" ? "Lekin" : "lekin")]];
-const fixUzbek = (text) => UZ_FIXES.reduce((t, [rx, to]) => t.replace(rx, to), text);
+// Slips seen in model output, fixed after the answer arrives: a misspelling, mixed apostrophes
+// (o‘, oʻ, o’ -> o' as in the interface), decimal points, and the action label left in English.
+const ACTION_LABEL = { ru: "**Рекомендуемое действие:**", uz: "**Tavsiya etilgan chora:**" };
+function polish(text, lang) {
+  let t = String(text || "");
+  if (ACTION_LABEL[lang]) t = t.replace(/\*\*\s*Recommended action\s*:?\s*\*\*:?/gi, ACTION_LABEL[lang]);
+  if (lang === "ru" || lang === "uz") t = t.replace(/(\d)\.(\d)(?![^\[]*\])/g, "$1,$2"); // 70.3 -> 70,3, not inside [ids]
+  if (lang === "uz") {
+    t = t.replace(/(^|[^\p{L}])([Ll])akin(?![\p{L}])/gu, (m, a, l) => a + (l === "L" ? "Lekin" : "lekin"));
+    t = t.replace(/(\p{L})[‘’ʻʼ`](?=\p{L}|\s|$)/gu, "$1'");
+  }
+  return t;
+}
 
 const UZBEK_STYLE = `
 - Write correct standard literary Uzbek in Latin script, the way an Uzbek science journalist writes. Write oʻ and gʻ as o' and g'.
@@ -134,7 +144,7 @@ export default async function handler(req, res) {
   try {
     const out = prov === "anthropic" ? await askClaude(system, messages, voice) : await askOpenAI(system, messages, voice, lang);
     if (out.refused) return res.status(200).json({ answer: REFUSAL[lang], model: out.model });
-    const answer = lang === "uz" ? fixUzbek(out.answer) : out.answer;
+    const answer = polish(out.answer, lang);
     return res.status(200).json({ answer, model: out.model, provider: prov });
   } catch (err) {
     const info = err.info || {};

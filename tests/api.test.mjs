@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 const calls = [];
 globalThis.fetch = async (url, init = {}) => {
   calls.push({ url: String(url), init });
-  if (String(url).endsWith("/chat/completions")) return new Response(JSON.stringify({ model: "gpt-4o-mini-2024-07-18", choices: [{ message: { content: "Turn the ventilation off [SSCE], lakin stay calm." } }] }), { status: 200 });
+  if (String(url).endsWith("/chat/completions")) return new Response(JSON.stringify({ model: "gpt-4o-mini-2024-07-18", choices: [{ message: { content: "Turn the ventilation off [SSCE], lakin stay calm at 70.3 kPa, yog‘och ma’lumot.\n**Recommended action:** Act [FLEX-2.1]." } }] }), { status: 200 });
   if (String(url).endsWith("/audio/transcriptions")) return new Response(JSON.stringify({ text: "Is Nomex flammable?" }), { status: 200 });
   if (String(url).endsWith("/audio/speech")) return new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { "content-type": "audio/mpeg" } });
   return new Response("{}", { status: 404 });
@@ -38,7 +38,8 @@ res = fakeRes();
 await ask(req("POST", { question: "Fire in the lab?", lang: "uz", mode: "voice", scenario: { label: "Lunar", o2: 30, p: 70.3, g: 0.166 }, contexts: [{ id: "SSCE", title: "t", text: "x" }] }), res);
 assert.equal(res.code, 200); assert.match(res.body.answer, /ventilation/); assert.equal(res.body.provider, "openai");
 const chat = JSON.parse(calls.at(-1).init.body);
-assert.match(res.body.answer, /lekin stay/); assert.doesNotMatch(res.body.answer, /lakin/); // Uzbek spelling fix
+assert.match(res.body.answer, /lekin stay calm at 70,3 kPa, yog'och ma'lumot/); assert.doesNotMatch(res.body.answer, /lakin/); // Uzbek polish
+assert.match(res.body.answer, /\*\*Tavsiya etilgan chora:\*\* Act \[FLEX-2\.1\]/); // label translated, ids untouched
 assert.equal(chat.model, "gpt-4.1"); assert.ok(chat.max_completion_tokens <= 320); // Uzbek uses the stronger model
 assert.match(chat.messages[0].content, /Uzbek/); assert.match(chat.messages[0].content, /read aloud/); assert.match(chat.messages[0].content, /lekin/);
 assert.match(chat.messages[0].content, /cabin atmosphere/);
