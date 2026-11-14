@@ -281,3 +281,4 @@ a.cite.ntrs:hover { text-decoration: underline; }
 .msg .sources li { margin: 2px 0; overflow-wrap: anywhere; }
 .msg .sources .muted { color: var(--muted); }
 .kb-line { margin: -6px 0 14px; font-size: 0.88rem; line-height: 1.45; opacity: 0.9; }
+.wake-diag { margin: 2px 0 8px 28px; font: 500 0.74rem/1.4 var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }

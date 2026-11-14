@@ -633,6 +633,7 @@
             <p class="engine" id="v-eng" style="margin:6px 0 10px;line-height:1.4">${t("ask.checking")}</p>
             <label class="toggle"><input type="checkbox" id="v-read" ${state.voiceMode ? "checked" : ""}><span>${t("v.readAloud")}</span></label>
             <label class="toggle"><input type="checkbox" id="v-wake" ${state.wake ? "checked" : ""}><span>${t("v.wake")}</span></label>
+            <p class="wake-diag" id="v-diag" aria-live="polite" hidden></p>
             <div class="quick"><span class="eyebrow">${t("v.quick")}</span><button class="chip danger" type="button" data-cmd="v.fire">🔥 ${t("v.fire")}</button><button class="chip danger" type="button" data-cmd="v.smoke">💨 ${t("v.smoke")}</button><button class="chip" type="button" id="v-stop" hidden>■ ${t("v.stop")}</button></div>
             <p class="hint">${t("v.cmdHint")}</p>
           </div>
@@ -723,11 +724,25 @@
         if (state.wake) { E.voice.resumeWake(); if (live.dataset.kind !== "note") setLive("wake"); }
       }
     }
+    // Live state of the wake-word listener: microphone on or off, what it hears, the last error.
+    const diag = { error: "", heard: "" };
+    function wakeDiag(st) {
+      const el = $("#v-diag");
+      if (!el || !state.wake) return;
+      if (st.error) diag.error = st.error;
+      if (st.interim) { diag.heard = st.interim.slice(-70); diag.error = ""; }
+      const names = { "uz-UZ": "O'zbek", "ru-RU": "Русский", "en-US": "English" };
+      const parts = [(st.live ? "🎙 " + t("v.diagLive") : "○ " + t("v.diagOff")) + ` · ${names[st.lang] || st.lang}`];
+      if (diag.heard) parts.push(t("v.diagHeard", { s: diag.heard }));
+      if (diag.error) parts.push("⚠ " + (t("v.err." + diag.error) !== "v.err." + diag.error ? t("v.err." + diag.error) : t("v.errOther", { e: diag.error })));
+      el.textContent = parts.join(" · ");
+      el.hidden = false;
+    }
     mic.addEventListener("click", () => (E.voice.isListening() ? E.voice.stopListening() : voiceQuestion()));
     $("#v-read").addEventListener("change", (e) => { state.voiceMode = e.target.checked; store.set("voiceMode", state.voiceMode); if (!state.voiceMode) E.voice.stopSpeaking(); });
     $("#v-wake").addEventListener("change", (e) => {
       state.wake = e.target.checked;
-      if (!state.wake) { E.voice.stopWake(); setLive(""); return; }
+      if (!state.wake) { E.voice.stopWake(); setLive(""); $("#v-diag").hidden = true; return; }
       const ok = E.voice.startWake(E.lang, (rest) => {
         if (location.hash !== "#ask") location.hash = "ask";
         if (rest && rest.length > 2) voiceQuestion(rest);
@@ -735,7 +750,7 @@
       }, (said) => {
         // show what was heard, so a missed wake word is visible instead of silent
         if (state.wake && !E.voice.isListening() && !E.voice.isSpeaking()) liveNote(t("v.wakeMiss", { s: said.slice(0, 60) }));
-      });
+      }, wakeDiag);
       if (!ok) { e.target.checked = false; state.wake = false; liveNote(t("v.wakeUnsupported")); return; }
       setLive("wake");
     });

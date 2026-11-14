@@ -268,47 +268,75 @@
   const WAKE_RX = /(?:^|[^\p{L}])(?:(?:hey|hi|hay|ok|okay|xey|ey|эй|хэй|хей|привет|salom)[\s,!]*)?(?:s[ae]rd[aoe]r|sardo|сард[оа]р)(?:ga|jon|bek|га|жон)?(?![\p{L}\d])[\s,.!?]*/iu;
   let wake = null; // { rec, live, paused, on, timer, begin, drop }
 
-  function startWake(lang, onWake, onHeard) {
+  /* startWake(lang, onWake(rest), onHeard(text), onStatus({ live, lang, interim, error }))
+   * Interim results are shown as the person speaks and can arm the wake word early; the question
+   * that follows in the same breath is taken from the final result (or after 2.5 s without one).
+   * If the browser cannot recognise the interface language, it falls back to Russian, then English. */
+  const FALLBACK = { uz: ["uz-UZ", "ru-RU", "en-US"], ru: ["ru-RU", "en-US"], en: ["en-US"] };
+  function startWake(lang, onWake, onHeard, onStatus) {
     if (!Rec) return false;
     stopWake();
-    const w = { on: true, paused: false, rec: null, live: false, started: 0, lang };
+    const langs = FALLBACK[lang] || ["en-US"];
+    const w = { on: true, paused: false, rec: null, live: false, started: 0, li: 0, armed: null, armTimer: null };
+    const status = (x) => { try { onStatus && onStatus({ live: w.live, lang: langs[w.li], ...x }); } catch (e) { /* ignore */ } };
     const drop = (r) => {
       if (w.rec === r) { w.rec = null; w.live = false; }
       try { r.abort(); } catch (err) { /* already ended */ }
     };
+    const fire = (r, rest) => {
+      clearTimeout(w.armTimer); w.armed = null;
+      w.paused = true;
+      drop(r);
+      status({ heard: true });
+      onWake(langs[w.li] === BCP[lang] ? rest : ""); // a question heard in a fallback language would be garbled
+    };
+    const match = (res) => {
+      for (let k = 0; k < res.length; k++) {
+        const alt = res[k].transcript.trim(), hit = WAKE_RX.exec(alt);
+        if (hit) return { said: alt, rest: alt.slice(hit.index + hit[0].length).trim() };
+      }
+      return null;
+    };
     const begin = () => {
       if (!w.on || w.paused || w.rec) return;
       const r = new Rec();
-      r.lang = BCP[lang] || "en-US";
+      r.lang = langs[w.li];
       r.continuous = true;
-      r.interimResults = false;
+      r.interimResults = true;
       r.maxAlternatives = 3;
-      r.onstart = () => { if (w.rec === r) w.live = true; };
+      r.onstart = () => { if (w.rec === r) { w.live = true; status({}); } };
       r.onresult = (e) => {
         if (w.rec !== r || w.paused) return;
         for (let i = e.resultIndex; i < e.results.length; i++) {
-          const res = e.results[i];
-          if (!res.isFinal) continue;
-          let said = res[0].transcript.trim(), m = null;
-          for (let k = 0; k < res.length && !m; k++) {
-            const alt = res[k].transcript.trim(), hit = WAKE_RX.exec(alt);
-            if (hit) { said = alt; m = hit; }
+          const res = e.results[i], m = match(res), said = res[0].transcript.trim();
+          if (!res.isFinal) {
+            status({ interim: said });
+            if (m && !w.armed) {
+              w.armed = { rest: m.rest };
+              w.armTimer = setTimeout(() => { if (w.armed && w.rec === r) fire(r, w.armed.rest); }, 2500);
+            } else if (m) w.armed.rest = m.rest;
+            continue;
           }
-          if (!m) { if (said && onHeard) onHeard(said); continue; }
-          w.paused = true;
-          drop(r);
-          onWake(said.slice(m.index + m[0].length).trim());
-          return;
+          if (m) return fire(r, m.rest);
+          if (w.armed) return fire(r, w.armed.rest);
+          status({ interim: said });
+          if (said && onHeard) onHeard(said);
         }
       };
-      r.onerror = (e) => { if (e.error === "not-allowed" || e.error === "service-not-allowed") { w.on = false; w.denied = true; } };
+      r.onerror = (e) => {
+        if (w.rec !== r) return;
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") { w.on = false; w.denied = true; }
+        if (e.error === "language-not-supported" && w.li < langs.length - 1) w.li++;
+        if (e.error !== "no-speech" && e.error !== "aborted") status({ error: e.error });
+      };
       r.onend = () => {
         if (w.rec !== r) return; // an old session we already replaced
         w.rec = null; w.live = false;
+        status({});
         if (w.on && !w.paused) setTimeout(begin, 250); // Chrome ends sessions after a while
       };
       w.rec = r; w.started = Date.now();
-      try { r.start(); } catch (err) { w.rec = null; setTimeout(begin, 1000); } // busy microphone: try again
+      try { r.start(); } catch (err) { w.rec = null; status({ error: "start-failed" }); setTimeout(begin, 1000); } // busy microphone: try again
     };
     // watchdog: a session that never started, or listening that silently stopped, is restarted
     w.timer = setInterval(() => {
@@ -328,7 +356,7 @@
     const w = wake;
     setTimeout(() => w.begin(), 300); // let the microphone and speaker settle first
   }
-  function stopWake() { if (wake) { wake.on = false; clearInterval(wake.timer); if (wake.rec) wake.drop(wake.rec); wake = null; } }
+  function stopWake() { if (wake) { wake.on = false; clearInterval(wake.timer); clearTimeout(wake.armTimer); if (wake.rec) wake.drop(wake.rec); wake = null; } }
   const wakeDenied = () => !!(wake && wake.denied);
 
   E.voice = {
