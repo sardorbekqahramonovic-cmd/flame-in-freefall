@@ -121,7 +121,7 @@ console.log("All EMBER model and language checks passed.");
   E.setLang("en");
 }
 // wake word spellings the recognisers produce
-for (const said of ["Hey Ember", "Xey Amber, savol", "Emberga", "Эй, Эмбер", "hey M1", "M1 marsda", "m 1", "M-1", "em bir"]) assert.ok(E.voice.WAKE_RX.test(said), `wake: ${said}`);
+for (const said of ["Hey Ember", "Xey Amber, savol", "Emberga", "Эй, Эмбер", "hey M1", "M1 marsda", "m 1", "M-1", "em bir", "hey Em1", "M one"]) assert.ok(E.voice.WAKE_RX.test(said), `wake: ${said}`);
 for (const said of ["remember", "chamber", "M10", "members"]) assert.ok(!E.voice.WAKE_RX.test(said), `not wake: ${said}`);
 console.log("Uzbek speech text checks passed.");
 

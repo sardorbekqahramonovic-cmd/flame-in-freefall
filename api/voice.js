@@ -3,7 +3,7 @@
 //   POST { action:"stt", audio, mime, lang } -> { text }   (audio = base64, max ~20 s)
 //   POST { action:"tts", text, lang }        -> audio/mpeg (text capped at 500 characters)
 // Needs OPENAI_API_KEY. Without it the browser falls back to the Web Speech API.
-import { pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openaiError } from "./_shared.js";
+import { pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openaiFetch, openaiError } from "./_shared.js";
 
 // Dated snapshots: OpenAI project model allowlists match exact names, and these are the ones usually listed.
 const STT_MODEL = () => process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe-2025-03-20";
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
       if (lang !== "uz") form.append("language", lang);
       form.append("prompt", `${STT_HINT[lang]} ${VOCAB}`);
       form.append("response_format", "json");
-      const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      const r = await openaiFetch("audio/transcriptions", {
         method: "POST",
         headers: { authorization: `Bearer ${OPENAI_KEY()}` },
         body: form,

@@ -697,11 +697,11 @@
         o.onended = () => ctx.close();
       } catch (e) { /* no audio */ }
     }
-    async function voiceQuestion(pre) {
+    async function voiceQuestion(pre, opts = {}) {
       E.voice.pauseWake();
       E.voice.stopSpeaking();
       try {
-        const q = pre || (await E.voice.listen(E.lang, setLive));
+        const q = pre || (await E.voice.listen(E.lang, setLive, opts));
         setLive("");
         if (!q) liveNote(t("v.notHeard"));
         else await send(q, { voice: true });
@@ -721,7 +721,7 @@
       const ok = E.voice.startWake(E.lang, (rest) => {
         if (location.hash !== "#ask") location.hash = "ask";
         if (rest && rest.length > 2) voiceQuestion(rest);
-        else { beep(); setLive("heard"); voiceQuestion(); }
+        else { beep(); setLive("heard"); voiceQuestion("", { browser: true }); }
       }, (said) => {
         // show what was heard, so a missed wake word is visible instead of silent
         if (state.wake && !E.voice.isListening() && !E.voice.isSpeaking()) liveNote(t("v.wakeMiss", { s: said.slice(0, 60) }));

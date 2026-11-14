@@ -64,11 +64,22 @@ export async function openaiError(r) {
   return { code: String(code).slice(0, 60), detail: message };
 }
 
-export async function openaiJSON(path, body) {
-  const r = await fetch(`https://api.openai.com/v1/${path}`, {
+// OpenAI sometimes answers 403 "no access to model" for a while after a project's model list
+// changes, then succeeds on the next try, so a 403 is retried twice before it counts.
+export async function openaiFetch(path, init, { tries = 3, wait = 350 } = {}) {
+  let r;
+  for (let i = 0; i < tries; i++) {
+    r = await fetch(`https://api.openai.com/v1/${path}`, init);
+    if (r.status !== 403 || i === tries - 1) return r;
+    await new Promise((ok) => setTimeout(ok, wait * (i + 1)));
+  }
+  return r;
+}
+
+export function openaiJSON(path, body) {
+  return openaiFetch(path, {
     method: "POST",
     headers: { authorization: `Bearer ${OPENAI_KEY()}`, "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  return r;
 }

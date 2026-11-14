@@ -2,8 +2,10 @@
 import assert from "node:assert/strict";
 
 const calls = [];
+let deny = 0; // next N OpenAI calls answer 403, as OpenAI does briefly after a model list change
 globalThis.fetch = async (url, init = {}) => {
   calls.push({ url: String(url), init });
+  if (deny > 0) { deny--; return new Response(JSON.stringify({ error: { code: "model_not_found", message: "Project `proj_abc` does not have access to model `x`" } }), { status: 403 }); }
   if (String(url).endsWith("/chat/completions")) return new Response(JSON.stringify({ model: "gpt-4o-mini-2024-07-18", choices: [{ message: { content: "Turn the ventilation off [SSCE], lakin stay calm at 70.3 kPa, yog‘och ma’lumot.\n**Recommended action:** Act [FLEX-2.1]." } }] }), { status: 200 });
   if (String(url).endsWith("/audio/transcriptions")) return new Response(JSON.stringify({ text: "Is Nomex flammable?" }), { status: 200 });
   if (String(url).endsWith("/audio/speech")) return new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { "content-type": "audio/mpeg" } });
@@ -47,6 +49,14 @@ res = fakeRes();
 await ask(req("POST", { question: "Fire?", lang: "en", scenario: {}, contexts: [] }), res);
 assert.equal(JSON.parse(calls.at(-1).init.body).model, "gpt-4o-mini"); // English stays on the cheap model
 assert.equal(calls.at(-1).init.headers.authorization, "Bearer test-key");
+
+// a passing 403 is retried; a lasting one is reported with OpenAI's code and no account id
+deny = 2; res = fakeRes();
+await voice(req("POST", { action: "tts", text: "Fire", lang: "en" }), res);
+assert.equal(res.code, 200);
+deny = 3; res = fakeRes();
+await voice(req("POST", { action: "tts", text: "Fire", lang: "en" }), res);
+assert.equal(res.code, 502); assert.equal(res.body.code, "model_not_found"); assert.doesNotMatch(res.body.detail, /proj_abc/);
 
 // other sites cannot spend the balance
 res = fakeRes(); await ask(req("POST", { question: "hi" }, { origin: "https://evil.example" }), res);
