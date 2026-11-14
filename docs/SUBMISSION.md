@@ -35,6 +35,7 @@ EMBER is an interactive, AI-powered fire-safety atlas that turns decades of NASA
 ## NASA data
 
 - PSI Data Repository, Combustion Science: https://psi.nasa.gov/physci/repo/search?q=combustion
+- NASA Technical Reports Server (NTRS), public search API, queried live for every AI answer: https://ntrs.nasa.gov
 - NASA Glenn Combustion Science (investigation pages, SoFIE, FM2, FLARE): https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/
 - A Researcher's Guide to International Space Station Combustion Science: https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/
 - NASA investigation fact sheets: BASS, FLEX, Saffire, SAME, DAFT, SPICE, SLICE, ACME (nasa.gov)
@@ -53,10 +54,10 @@ Partner contributions are referenced through NASA sources: JAXA's FLEX-2J drople
 - Limiting Oxygen Index values: typical ASTM D2863 literature values for each material.
 - Fonts: Archivo, IBM Plex Sans, IBM Plex Mono (Google Fonts, SIL Open Font License).
 - Anthropic Claude API and the @anthropic-ai/sdk package (MIT).
-- OpenAI API: gpt-4o-mini (questions), gpt-4o-mini-transcribe (speech recognition), gpt-4o-mini-tts (speech).
+- OpenAI API: gpt-4o-mini (questions and NTRS search keywords), gpt-4.1 (Uzbek answers), gpt-4o-mini-transcribe (speech recognition), gpt-4o-mini-tts (speech).
 - Web Speech API (browser speech recognition and synthesis).
 - All other code is original work by the team.
 
 ## Use of artificial intelligence
 
-We used Anthropic's Claude as a coding and research assistant to help curate the dataset from the NASA sources above, write code and draft documentation. The team reviewed the content and is responsible for it. In the running app, Claude or an OpenAI model answers user questions only from the curated NASA evidence and cites its sources, and OpenAI models turn speech into text and read answers aloud. The emergency command checklists were written by the team from the cited NASA evidence and are labelled as training guidance, not official NASA procedure. No AI-generated images, video or audio are presented as NASA material, and no NASA logos are used.
+We used Anthropic's Claude as a coding and research assistant to help curate the dataset from the NASA sources above, write code and draft documentation. The team reviewed the content and is responsible for it. In the running app, Claude or an OpenAI model answers user questions from the curated NASA evidence and from NASA technical report abstracts found live in NTRS, and cites its sources; anything not supported by those sources is marked "general knowledge, not NASA data", and OpenAI models turn speech into text and read answers aloud. The emergency command checklists were written by the team from the cited NASA evidence and are labelled as training guidance, not official NASA procedure. No AI-generated images, video or audio are presented as NASA material, and no NASA logos are used.

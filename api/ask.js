@@ -3,9 +3,11 @@
 //   ANTHROPIC_API_KEY set -> Claude
 //   else OPENAI_API_KEY set -> OpenAI (OPENAI_MODEL, default gpt-4o-mini, cheap)
 //   neither -> GET reports ok:false and the browser uses its offline reasoner.
-// GET returns status; POST answers a question from the evidence passages the browser retrieved.
+// GET returns status; POST answers a question from the evidence passages the browser retrieved,
+// widened with abstracts of NASA technical reports found live in NTRS for that question.
 import Anthropic from "@anthropic-ai/sdk";
 import { LANGS, pickLang, clean, readBody, guard, OPENAI_KEY, openaiJSON, openaiError } from "./_shared.js";
+import { searchNTRS, heuristicQueries } from "./_ntrs.js";
 
 const CLAUDE_MODEL = "claude-opus-5-5";
 const OPENAI_MODEL = () => process.env.OPENAI_MODEL || "gpt-4o-mini";
@@ -18,8 +20,9 @@ const SYSTEM = `You are EMBER, a fire-safety analyst for human space exploration
 You answer questions about NASA microgravity combustion research for engineers, researchers and students.
 
 Rules:
-- Use ONLY the evidence passages provided in the user turn. If they do not answer the question, say what is missing.
-- Cite every factual claim with the passage id in square brackets, e.g. [BASS] or [FLEX#1]. Never invent ids.
+- Base the answer on the evidence passages in the user turn. Passages whose id starts with "NTRS-" are abstracts of NASA technical reports found for this question; use them like the others.
+- Cite every claim taken from a passage with its id in square brackets, e.g. [BASS], [FLEX#1] or [NTRS-20205004657]. Never invent ids.
+- If the passages do not fully answer the question, say in one short sentence what NASA data is missing. You may then add what is generally known in science or engineering, in separate sentences that start with "In general" (in the answer language) and end with [GENERAL]. Never put [GENERAL] in a sentence with a passage citation, and never present general knowledge as NASA data.
 - Passage MODEL is EMBER's screening model output. Present it as an estimate, not as measured data.
 - PSI holds no partial-gravity (Moon or Mars) combustion data. When the question involves the Moon or Mars, say that results are extrapolated from microgravity and 1 g data.
 - Rocket and propellant fires are out of scope.
@@ -63,6 +66,32 @@ const REFUSAL = {
 function systemFor(lang, voice) {
   return `${SYSTEM}${voice ? STYLE_VOICE : STYLE_TEXT}
 - Write the whole answer in ${LANGS[lang].name}${voice ? "" : ', including the "**Recommended action:**" label'}. Keep investigation names, passage ids in brackets and numbers unchanged.${lang === "uz" ? UZBEK_STYLE : ""}`;
+}
+
+// NTRS needs English keywords and requires every word to match, so a cheap model turns the
+// question (in any language) into two short queries: a specific one and a broader one.
+const QUERY_PROMPT = `You write search queries for the NASA Technical Reports Server (NTRS) about fire safety and combustion in spacecraft, habitats, microgravity or partial gravity.
+The search engine requires every word to appear, so each query has 2 to 4 English keywords: no stop words, no quotes, no operators.
+Translate from any language. Return JSON: {"queries": ["specific query", "broader query of 2 words"]}.
+Never write queries about rocket propellants or engines.`;
+
+async function searchQueries(question, lang) {
+  const fallback = heuristicQueries(question, lang);
+  if (!OPENAI_KEY()) return fallback;
+  try {
+    const r = await openaiJSON("chat/completions", {
+      model: process.env.OPENAI_QUERY_MODEL || "gpt-4o-mini",
+      max_completion_tokens: 60,
+      response_format: { type: "json_object" },
+      messages: [{ role: "system", content: QUERY_PROMPT }, { role: "user", content: question }],
+    });
+    if (!r.ok) return fallback;
+    const j = await r.json();
+    const q = JSON.parse(j.choices[0].message.content).queries;
+    return Array.isArray(q) && q.length ? q.map((x) => clean(x, 80)).slice(0, 2) : fallback;
+  } catch (e) {
+    return fallback;
+  }
 }
 
 function provider() {
@@ -140,12 +169,26 @@ export default async function handler(req, res) {
   // The conversation must start with a user turn.
   while (messages.length && messages[0].role !== "user") messages.shift();
 
+  // Widen the evidence with NASA technical reports (NTRS) that match this question.
+  let ntrs = { docs: [], total: 0, queries: [] };
+  try {
+    ntrs = await searchNTRS(await searchQueries(question, lang), { size: voice ? 3 : 6 });
+  } catch (e) { /* NTRS unreachable: answer from the curated passages only */ }
+  if (ntrs.docs.length) {
+    const extra = ntrs.docs
+      .map((d) => `<passage id="${d.id}" title="${d.title}${d.year ? ` (${d.year})` : ""}">\n${d.text}\n</passage>`)
+      .join("\n");
+    const last = messages[messages.length - 1];
+    last.content = last.content.replace("\n\nQuestion: ", `\n${extra}\n\nQuestion: `);
+  }
+  const sources = ntrs.docs.map(({ id, title, year, url, type }) => ({ id, title, year, url, type }));
+
   const system = systemFor(lang, voice);
   try {
     const out = prov === "anthropic" ? await askClaude(system, messages, voice) : await askOpenAI(system, messages, voice, lang);
     if (out.refused) return res.status(200).json({ answer: REFUSAL[lang], model: out.model });
     const answer = polish(out.answer, lang);
-    return res.status(200).json({ answer, model: out.model, provider: prov });
+    return res.status(200).json({ answer, model: out.model, provider: prov, sources, ntrs: { total: ntrs.total, queries: ntrs.queries } });
   } catch (err) {
     const info = err.info || {};
     if (err instanceof Anthropic.RateLimitError || err.status === 429) return res.status(429).json({ error: "Rate limited or out of credit, try again later", ...info });

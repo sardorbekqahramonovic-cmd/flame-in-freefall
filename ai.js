@@ -285,7 +285,7 @@
     const j = await r.json();
     if (!j.answer) throw new Error(j.error || "Empty answer");
     const cites = [...new Set((j.answer.match(/\[([A-Za-z0-9\-#:]+)\]/g) || []).map((m) => m.slice(1, -1).split(/[#:]/)[0]))].filter((id) => E.INVESTIGATIONS.some((i) => i.id === id));
-    return { text: j.answer, spoken: speakable(j.answer).slice(0, 500), cites, confidence: j.confidence || (hits[0] && hits[0].s > 5 ? "High" : "Medium"), gaps: gapFlags(q, cond), engine: j.model || "ai", provider: j.provider || (online && online.provider) };
+    return { text: j.answer, spoken: speakable(j.answer).slice(0, 500), cites, confidence: j.confidence || (hits[0] && hits[0].s > 5 ? "High" : "Medium"), gaps: gapFlags(q, cond), engine: j.model || "ai", provider: j.provider || (online && online.provider), sources: Array.isArray(j.sources) ? j.sources : [], ntrs: j.ntrs || null };
   }
 
   async function ask(q, scenario, history = [], opts = {}) {

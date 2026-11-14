@@ -349,6 +349,14 @@
     "cite.PHYS": ["physics", "физика", "fizika"],
     "cite.INSIGHT": ["insight", "вывод", "xulosa"],
     "cite.EARTH": ["Earth benefit", "польза для Земли", "Yer uchun foyda"],
+    "cite.GENERAL": ["general knowledge, not NASA data", "общие знания, не данные NASA", "umumiy bilim, NASA ma'lumoti emas"],
+    "cite.GENERALtip": ["Not found in the NASA sources EMBER retrieved; general scientific knowledge, check before relying on it.", "Не найдено в источниках NASA, которые нашёл EMBER; это общие научные знания, проверьте перед использованием.", "EMBER topgan NASA manbalarida yo'q; bu umumiy ilmiy bilim, ishonishdan oldin tekshiring."],
+    "cite.NTRS": ["NASA report {y}", "отчёт NASA {y}", "NASA hisoboti {y}"],
+    "ask.sources": ["NASA technical reports cited", "Цитируемые технические отчёты NASA", "Iqtibos keltirilgan NASA texnik hisobotlari"],
+    "ask.searched": ["Live NTRS search: {n} NASA reports match “{q}”.", "Поиск в NTRS: {n} отчётов NASA по запросу «{q}».", "NTRS qidiruvi: “{q}” bo'yicha {n} ta NASA hisoboti topildi."],
+    "kb.base": ["<b>Knowledge base:</b> {inv} curated NASA investigations and {ins} cross-study insights.", "<b>База знаний:</b> {inv} отобранных исследований NASA и {ins} сквозных выводов.", "<b>Bilim bazasi:</b> {inv} ta tanlangan NASA tadqiqoti va {ins} ta umumlashtirilgan xulosa."],
+    "kb.ntrs": ["Each AI answer also searches the NASA Technical Reports Server live: {mc} reports on microgravity combustion, {sf} on spacecraft fire, {fl} on flammability, {fs} on fire suppression and {sd} on smoke detection.", "Каждый ответ AI также ищет в NASA Technical Reports Server: {mc} отчётов о горении в микрогравитации, {sf} о пожарах на кораблях, {fl} о горючести, {fs} о пожаротушении и {sd} об обнаружении дыма.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi: mikrogravitatsiyada yonish bo'yicha {mc}, kemadagi yong'in bo'yicha {sf}, yonuvchanlik bo'yicha {fl}, yong'inni o'chirish bo'yicha {fs} va tutunni aniqlash bo'yicha {sd} ta hisobot."],
+    "kb.ntrsLive": ["Each AI answer also searches the NASA Technical Reports Server live.", "Каждый ответ AI также ищет в NASA Technical Reports Server.", "Har bir AI javobi NASA Technical Reports Server'dan ham qidiradi."],
     "cite.MODEL": ["EMBER model", "модель EMBER", "EMBER modeli"],
   };
 

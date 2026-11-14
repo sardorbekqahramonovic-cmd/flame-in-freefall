@@ -6,6 +6,18 @@ let deny = 0; // next N OpenAI calls answer 403, as OpenAI does briefly after a 
 globalThis.fetch = async (url, init = {}) => {
   calls.push({ url: String(url), init });
   if (deny > 0) { deny--; return new Response(JSON.stringify({ error: { code: "model_not_found", message: "Project `proj_abc` does not have access to model `x`" } }), { status: 403 }); }
+  if (String(url).includes("ntrs.nasa.gov/api/citations/search")) {
+    const q = new URL(url).searchParams.get("q");
+    const results = [
+      { id: 20205004657, title: "Effects of Confinement on Flame Spread in Microgravity", abstract: "Flame spread over thin fuels in confined microgravity channels was faster ...", stiType: "CONFERENCE_PAPER", distributionDate: "2020-07-17T00:00:00" },
+      { id: 19990001, title: "Solid rocket propellant combustion", abstract: "Propellant burn rates ...", stiType: "REPORT" },
+      { id: 20100002, title: "No abstract record", abstract: "" },
+    ];
+    return new Response(JSON.stringify({ stats: { total: q === "flame spread" ? 1234 : 56 }, results }), { status: 200 });
+  }
+  if (String(url).endsWith("/chat/completions") && String(init.body).includes("json_object")) {
+    return new Response(JSON.stringify({ model: "gpt-4o-mini", choices: [{ message: { content: JSON.stringify({ queries: ["confined flame spread microgravity", "flame spread"] }) } }] }), { status: 200 });
+  }
   if (String(url).endsWith("/chat/completions")) return new Response(JSON.stringify({ model: "gpt-4o-mini-2024-07-18", choices: [{ message: { content: "Turn the ventilation off [SSCE], lakin stay calm at 70.3 kPa, yog‘och ma’lumot.\n**Recommended action:** Act [FLEX-2.1]." } }] }), { status: 200 });
   if (String(url).endsWith("/audio/transcriptions")) return new Response(JSON.stringify({ text: "Is Nomex flammable?" }), { status: 200 });
   if (String(url).endsWith("/audio/speech")) return new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { "content-type": "audio/mpeg" } });
@@ -57,6 +69,30 @@ assert.equal(res.code, 200);
 deny = 3; res = fakeRes();
 await voice(req("POST", { action: "tts", text: "Fire", lang: "en" }), res);
 assert.equal(res.code, 502); assert.equal(res.body.code, "model_not_found"); assert.doesNotMatch(res.body.detail, /proj_abc/);
+
+// NTRS: keywords from a cheap model, reports merged in as passages, propellant and empty records dropped
+{
+  const before = calls.length;
+  res = fakeRes();
+  await ask(req("POST", { question: "Olov yopiq joyda tezroq tarqaladimi?", lang: "uz", scenario: {}, contexts: [{ id: "BASS", title: "t", text: "x" }] }), res);
+  assert.equal(res.code, 200);
+  const mine = calls.slice(before);
+  const qcall = mine.find((c) => c.url.endsWith("/chat/completions") && String(c.init.body).includes("json_object"));
+  assert.ok(qcall, "query model called"); assert.equal(JSON.parse(qcall.init.body).model, "gpt-4o-mini");
+  assert.equal(mine.filter((c) => c.url.includes("ntrs.nasa.gov")).length, 2);
+  assert.deepEqual(res.body.sources.map((x) => x.id), ["NTRS-20205004657"]);
+  assert.equal(res.body.sources[0].year, 2020); assert.equal(res.body.sources[0].url, "https://ntrs.nasa.gov/citations/20205004657");
+  assert.equal(res.body.ntrs.total, 1234);
+  const final = JSON.parse(mine.filter((c) => c.url.endsWith("/chat/completions")).at(-1).init.body);
+  assert.match(final.messages.at(-1).content, /<passage id="NTRS-20205004657" title="Effects of Confinement on Flame Spread in Microgravity \(2020\)">/);
+  assert.match(final.messages[0].content, /\[GENERAL\]/);
+}
+// corpus counts are public and cached at the edge
+{
+  const corpus = (await import("../api/corpus.js")).default;
+  res = fakeRes(); await corpus(req("GET"), res);
+  assert.equal(res.body.ntrs["microgravity combustion"], 56); assert.match(res.headers["cache-control"], /s-maxage/);
+}
 
 // other sites cannot spend the balance
 res = fakeRes(); await ask(req("POST", { question: "hi" }, { origin: "https://evil.example" }), res);

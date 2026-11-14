@@ -271,3 +271,13 @@ footer { border-top: 1px solid var(--line); padding-block: 22px 40px; color: var
 footer .wrap { display: grid; gap: 6px; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* NASA report citations, general-knowledge marker, cited sources, knowledge-base line */
+a.cite.ntrs { text-decoration: none; color: var(--accent, var(--flame)); }
+a.cite.ntrs:hover { text-decoration: underline; }
+.cite.general { cursor: help; color: var(--warn, #b7791f); background: color-mix(in srgb, var(--warn, #b7791f) 14%, transparent); }
+.msg .sources { margin-top: 10px; font-size: 0.85rem; }
+.msg .sources ul { margin: 4px 0 0; padding-left: 18px; }
+.msg .sources li { margin: 2px 0; overflow-wrap: anywhere; }
+.msg .sources .muted { color: var(--muted); }
+.kb-line { margin: -6px 0 14px; font-size: 0.88rem; line-height: 1.45; opacity: 0.9; }

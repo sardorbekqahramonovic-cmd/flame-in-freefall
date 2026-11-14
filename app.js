@@ -44,7 +44,8 @@
   const hideTip = () => (tip.hidden = true);
 
   /* ---------------- markdown-ish renderer with citation chips ---------------- */
-  function renderAnswer(text) {
+  function renderAnswer(text, sources = []) {
+    const src = new Map(sources.map((s) => [s.id, s]));
     const lines = esc(text).split(/\n+/);
     let html = "", inList = false;
     lines.forEach((ln) => {
@@ -54,6 +55,11 @@
         .replace(/\[([A-Za-z0-9\-#:]+)\]/g, (m, id) => {
           const base = id.split(/[#:]/)[0];
           if (invById(base)) return `<button class="cite" data-inv="${base}" type="button">${esc(invById(base).name)}</button>`;
+          if (id === "GENERAL") return `<span class="cite general" title="${esc(t("cite.GENERALtip"))}">${esc(t("cite.GENERAL"))}</span>`;
+          if (/^NTRS-\d+$/.test(id)) {
+            const s = src.get(id), url = s ? s.url : `https://ntrs.nasa.gov/citations/${id.slice(5)}`;
+            return `<a class="cite ntrs" href="${esc(url)}" target="_blank" rel="noopener" title="${esc(s ? s.title : id)}">${esc(t("cite.NTRS", { y: s && s.year ? s.year : "" }).trim())}</a>`;
+          }
           const pre = id.split("-")[0];
           const kind = ["ATM", "GAP", "HIST", "PHYS", "INSIGHT", "EARTH", "MODEL"].includes(pre) ? t("cite." + pre) : id;
           return `<span class="cite" style="cursor:default">${esc(kind)}</span>`;
@@ -614,6 +620,7 @@
     v.dataset.init = "1";
     v.innerHTML = `
       <div class="view-head"><div><h2>${t("ask.title")}</h2><p>${t("ask.desc")}</p></div><span class="engine" id="engine">${t("ask.checking")}</span></div>
+      <p class="kb-line" id="kb-line">${t("kb.base", { inv: E.INVESTIGATIONS.length, ins: E.INSIGHTS.length })}</p>
       <div class="split">
         <div class="panel chat">
           <div class="chat-log" id="chat-log" aria-live="polite"></div>
@@ -646,7 +653,10 @@
     function pushBot(res) {
       const div = document.createElement("div");
       div.className = "msg bot";
-      div.innerHTML = renderAnswer(res.text) +
+      const cited = (res.sources || []).filter((s) => res.text.includes(`[${s.id}]`));
+      div.innerHTML = renderAnswer(res.text, res.sources) +
+        (cited.length ? `<div class="sources"><span class="eyebrow">${t("ask.sources")}</span><ul>${cited.map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>${s.year ? ` <span class="muted">(${s.year})</span>` : ""}</li>`).join("")}</ul></div>` : "") +
+        (res.ntrs && res.ntrs.queries && res.ntrs.queries.length ? `<p class="note" style="margin-top:6px">${esc(t("ask.searched", { n: (res.ntrs.total || 0).toLocaleString(E.lang === "en" ? "en-US" : E.lang === "ru" ? "ru-RU" : "uz-Latn-UZ"), q: res.ntrs.queries[0].q }))}</p>` : "") +
         (res.confidence || res.gaps.length ? `<div class="badge-row">${res.confidence ? `<span class="pill ${/High/.test(res.confidence) ? "ok" : /Medium/.test(res.confidence) ? "warn" : "crit"}">${esc(t("ask.conf", { c: lv(res.confidence) }))}</span>` : ""}${res.gaps.map((g) => `<span class="pill warn" title="${esc(g)}">⚠ ${t("ask.gap")}: ${esc(g.split(/[.(;]/)[0])}</span>`).join("")}</div>` : "") +
         (res.notice ? `<p class="note" style="margin-top:8px">${esc(res.notice)}</p>` : "") +
         (res.engine ? `<div class="engine" style="margin-top:8px">${res.engine === "offline" ? t("eng.offline") : E.ai.providerName(res.provider) + " · " + esc(res.engine)}</div>` : "");
@@ -744,6 +754,25 @@
     const on = await E.ai.checkOnline();
     const el = $("#engine");
     if (el) el.innerHTML = on ? t("ask.online", { p: E.ai.providerName(on.provider), m: esc(on.model) }) : t("ask.offline");
+    updateKb(on);
+  }
+  // Knowledge-base size: curated record plus the NASA reports that live search reaches.
+  let corpus = null;
+  async function updateKb(on) {
+    const el = $("#kb-line");
+    if (!el) return;
+    const base = t("kb.base", { inv: E.INVESTIGATIONS.length, ins: E.INSIGHTS.length });
+    if (!on) { el.innerHTML = base; return; }
+    if (!corpus) {
+      try {
+        const r = await fetch((window.EMBER_CONFIG && window.EMBER_CONFIG.corpusUrl) || "api/corpus");
+        corpus = r.ok ? (await r.json()).ntrs || {} : {};
+      } catch (e) { corpus = {}; }
+    }
+    const nf = (n) => Number(n || 0).toLocaleString(E.lang === "en" ? "en-US" : E.lang === "ru" ? "ru-RU" : "uz-Latn-UZ");
+    el.innerHTML = base + " " + (corpus["microgravity combustion"]
+      ? t("kb.ntrs", { mc: nf(corpus["microgravity combustion"]), sf: nf(corpus["spacecraft fire"]), fl: nf(corpus["flammability"]), fs: nf(corpus["fire suppression"]), sd: nf(corpus["smoke detection"]) })
+      : t("kb.ntrsLive"));
   }
 
   /* ---------------- gaps & earth ---------------- */
