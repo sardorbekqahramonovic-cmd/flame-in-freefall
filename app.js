@@ -88,8 +88,14 @@
       const mat = g.dataset.mat;
       if (mat && E.MATERIALS.some((m) => m.id === mat)) { store.set("material", mat); if (state.sim) state.sim.materialId = mat; }
       $("#drawer-root").innerHTML = "";
-      const go = () => { const el = document.getElementById(g.dataset.goto); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
-      if (location.hash !== "#risk") { location.hash = "risk"; setTimeout(go, 250); } else { render("risk"); setTimeout(go, 50); }
+      // Jump without animation: Chrome can drop a smooth scroll that starts right after a view switch.
+      const go = () => {
+        const el = document.getElementById(g.dataset.goto);
+        if (!el) return;
+        el.scrollIntoView({ block: "start" });
+        if (el.classList.contains("panel")) { el.classList.remove("jump-flash"); void el.offsetWidth; el.classList.add("jump-flash"); setTimeout(() => el.classList.remove("jump-flash"), 1800); }
+      };
+      if (location.hash !== "#risk") { window.addEventListener("hashchange", () => setTimeout(go, 30), { once: true }); location.hash = "risk"; } else { render("risk"); go(); }
     }
   });
 
