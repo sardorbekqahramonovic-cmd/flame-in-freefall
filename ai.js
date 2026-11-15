@@ -18,9 +18,10 @@
 
   function getIndex() {
     const k = E.lang || "en";
-    if (!indexes[k]) indexes[k] = E.model.makeIndex(E.model.buildChunks());
+    if (!indexes[k]) { const chunks = E.model.buildChunks(); indexes[k] = { ...E.model.makeIndex(chunks), chunks }; }
     return indexes[k];
   }
+  const chunkById = (id) => getIndex().chunks.find((c) => c.id === id);
 
   /* question patterns in English, Russian and Uzbek */
   const RX = {
@@ -36,12 +37,19 @@
     partial: /moon|lunar|mars|partial|reduced.?g|лун|марс|частичн|пониженн\w* гравит|\boy(da|dagi|ga)?\b|qisman/,
     highO2: /high.?oxygen|enriched|34%|30%|exploration atm|8[.,]2|10[.,]2|обогащ|высок\w* (содержан\w* )?кислор|yuqori kislorod|boyitilgan/,
     battery: /battery|lithium|li-ion|аккумул|батаре|лити|akkumul|batare|litiy/,
+    valid: /accura|validat|reliab|trustworth|how good|how well|error|verif|точн|достоверн|провер|надёжн|ошиб|aniq(?!la)|ishonchli|tekshiril|xato/,
+    modelWord: /model|модел|vulkan|вулкан|predict|прогноз|bashorat/,
+    predict: /predict|forecast|expect|prognos|прогноз|предсказ|ожида|bashorat|kutil|taxmin/,
+    fm2: /\bfm-?2\b/,
   };
+  const wantsValidation = (s) => RX.valid.test(s) && RX.modelWord.test(s);
+  const wantsFm2 = (s, cond) => (RX.fm2.test(s) && (RX.predict.test(s) || RX.modelWord.test(s))) || (!cond && RX.predict.test(s) && RX.moon.test(s));
   // material names and common words in the three languages (most specific first)
   const MAT_ALIAS = [
     ["nomex", ["nomex", "номекс"]], ["kapton", ["kapton", "каптон", "polyimide", "полиимид", "poliimid"]],
     ["ptfe", ["teflon", "ptfe", "тефлон"]], ["silicone", ["silicone", "силикон", "silikon"]],
     ["pc", ["polycarbonate", "lexan", "поликарбонат", "polikarbonat"]], ["pmma", ["pmma", "acrylic", "акрил", "akril", "plexiglas", "оргстекл"]],
+    ["pet", ["mylar", "melinex", "polyester", "полиэстер", "лавсан", "poliefir", "poliester", "pet film", "pet plyonka", "pet плёнк", "pet пленк"]], ["psu", ["polysulfone", "polysulphone", "udel", "полисульфон", "polisulfon"]],
     ["pe", ["polyethylene", "полиэтилен", "polietilen"]], ["paper", ["paper", "бумаг", "qog'oz", "cellulose", "целлюлоз", "tsellyuloza"]],
     ["sibal", ["sibal", "cotton", "fiberglass", "fabric", "хлоп", "ткан", "paxta", "mato"]],
   ];
@@ -81,6 +89,7 @@
     else if (RX.micro.test(s)) out.g = 0;
     const mat = MAT_ALIAS.find(([, words]) => words.some((w) => s.includes(w)));
     if (mat) out.materialId = mat[0];
+    else if (/\bPET\b/.test(q)) out.materialId = "pet";
     const has = out.o2 !== undefined || out.materialId || out.p !== undefined;
     if (!has) return null;
     return {
@@ -160,6 +169,7 @@
   function emergency(q) {
     const s = norm(q).replace(/[!?.,]/g, " ").trim();
     if (!s || s.split(/\s+/).length > 4) return null; // only short commands, not questions about fire
+    if (/\b(how|what|why|which|when|where)\b|как|что|почему|зачем|какой|какая|какие|qanday|nima|nega|qaysi|qachon|qayer/.test(s)) return null;
     const kind = EM_RX.smoke.test(s) ? "smoke" : EM_RX.fire.test(s) ? "fire" : null;
     if (!kind) return null;
     const n = kind === "fire" ? 6 : 5;
@@ -186,13 +196,31 @@
   }
   const firstSentence = (x) => firstSentences(speakable(x), 1);
 
+  /* ---------- the model's own record: its NASA check and its FM2 predictions ---------- */
+  function validationAnswer() {
+    const v = E.model.validationNumbers();
+    const lines = [t("ai.valHead"), `- ${t("ai.val1", v)} [MODEL-2]`, `- ${t("ai.val2", v)} [MODEL-2]`, `- ${t("ai.val3", v)} [MODEL-1]`, t("ai.val4", { tab: t("tab.risk"), panel: t("va.title") })];
+    return { text: lines.join("\n"), spoken: speakable(t("sp.val", v)), cites: [], confidence: "High", gaps: [], engine: "offline" };
+  }
+  function fm2Answer() {
+    const preds = E.model.fm2Predictions();
+    const nomex = preds.find((p) => p.material.id === "nomex") || preds[0];
+    const lines = [t("ai.fmHead", { d: E.model.FM2_FROZEN }), t("ai.fmSetup")];
+    preds.forEach((p) => lines.push(`- ${E.model.fm2Line(p)} [MODEL-3]`));
+    lines.push(`- ${t("ai.fmNasa", { x: E.num(nomex.loc, 1) })} [FM2]`);
+    lines.push(t("ai.fmTest"));
+    return { text: lines.join("\n"), spoken: speakable(t("sp.fm", { m: "Nomex", x: E.num(nomex.loc, 1) })), cites: ["FM2"], confidence: "Medium", gaps: [t("gapf.g")], engine: "offline" };
+  }
+
   /* ---------- offline reasoner ---------- */
   function offlineAnswer(q, scenario) {
-    const idx = getIndex();
     const cond = parseConditions(q, scenario);
+    const s = norm(q);
+    if (wantsValidation(s)) return validationAnswer();
+    if (wantsFm2(s, cond)) return fm2Answer();
+    const idx = getIndex();
     const hits = topical(q, idx.search(q, 14), cond).slice(0, 8);
     const invs = detectInvs(q);
-    const s = norm(q);
     const lines = [];
     const cites = new Set();
     const spoken = []; // short voice version: key action or verdict first
@@ -225,13 +253,15 @@
       const a = E.model.assess(cond);
       lines.push(t("ai.modelHead", { m: a.material.label, o2: fmt(cond.o2), p: n1(cond.p), psia: n1(cond.p / 6.895), g: fmt(cond.g) }));
       lines.push("- " + t("ai.model1", { loc: n1(a.loc), loc1: n1(a.loc1g), m: (a.margin >= 0 ? "+" : "") + n1(a.margin), st: a.state }));
+      lines.push("- " + t("ai.model3", { anchor: E.model.anchorText(a.material) }) + ` [MAT-${a.material.id}]`);
       lines.push("- " + t("ai.model2", { u: n1(a.uEff), v: fmt(cond.vent), b: n1(a.ub), lv: t("lv." + a.coverage.level), note: a.coverage.note }));
       a.coverage.near.slice(0, 2).forEach((n) => cites.add(n.inv.id));
       spoken.unshift(t("sp.model", { m: a.material.label, st: a.state, loc: n1(a.loc), o2: fmt(cond.o2) }));
     }
 
     if (!wantsCompare && !wantsRank) {
-      const used = hits.filter((h) => h.c.inv || h.c.id.startsWith("PHYS") || h.c.id.startsWith("HIST") || h.c.id.startsWith("GAP") || h.c.id.startsWith("ATM") || h.c.id.startsWith("EARTH")).slice(0, cond ? 3 : 5);
+      const used = hits.filter((h) => h.c.inv || h.c.id.startsWith("PHYS") || h.c.id.startsWith("HIST") || h.c.id.startsWith("GAP") || h.c.id.startsWith("ATM") || h.c.id.startsWith("EARTH") || h.c.id.startsWith("MODEL") || h.c.id.startsWith("MAT-")).filter((h) => !(cond && h.c.id === `MAT-${cond.materialId}`)).slice(0, cond ? 3 : 5);
+      const evStart = lines.length;
       if (used.length) {
         if (!cond) lines.push(t("ai.record"));
         const perInv = {}, said = [];
@@ -250,7 +280,7 @@
       const ins = (tag && E.INSIGHTS.find((x) => x.tags.includes(tag) && (x.cites.some((c) => cites.has(c)) || hits.some((h) => h.c.id === `INSIGHT-${x.rank}`)))) || (tag && E.INSIGHTS.find((x) => x.tags.includes(tag))) || E.INSIGHTS.find((x) => hits.some((h) => h.c.id === `INSIGHT-${x.rank}`));
       // voice: key action first; for a material question the yes/no verdict comes first, then the action
       if (ins) { lines.push(t("ai.action", { a: ins.action })); spoken.splice(cond ? 1 : 0, 0, t("sp.action", { a: ins.action })); }
-      const firstEvidence = lines.find((l) => l.startsWith("- "));
+      const firstEvidence = lines.slice(evStart).find((l) => l.startsWith("- "));
       if (firstEvidence && spoken.length < 2) spoken.push(firstSentence(firstEvidence));
       if (!spoken.length && lines.length) spoken.push(firstSentence(lines[lines.length - 1]));
     }
@@ -265,7 +295,10 @@
     const idx = getIndex();
     const cond = parseConditions(q, scenario);
     const hits = topical(q, idx.search(q, 16), cond).slice(0, 10);
-    const contexts = hits.map((h) => ({ id: h.c.inv || h.c.id, title: h.c.title, text: h.c.text }));
+    const s = norm(q);
+    const forced = [...(wantsValidation(s) ? ["MODEL-2", "MODEL-1"] : []), ...(wantsFm2(s, cond) ? ["MODEL-3", "FM2"] : []), ...(cond ? [`MAT-${cond.materialId}`] : [])];
+    const pinned = forced.map(chunkById).filter(Boolean);
+    const contexts = [...pinned, ...hits.map((h) => h.c).filter((c) => !forced.includes(c.id))].map((c) => ({ id: c.id.startsWith("MODEL") || c.id.startsWith("MAT-") ? c.id : c.inv || c.id, title: c.title, text: c.text }));
     if (cond) {
       const a = E.model.assess(cond);
       contexts.unshift({ id: "MODEL", title: "VULKAN flammability model output", text: `Material ${a.material.label} (1-g anchor: ${a.anchor.kind === "loi" ? `LOI ${a.anchor.o2}%, unverified` : `NASA-STD-6001 Test 1 MOC ${a.anchor.o2}% at ${(a.anchor.kPa / 6.89476).toFixed(1)} psia`}; likely limit range ${a.range[0].toFixed(1)}-${a.range[1].toFixed(1)}%), ${cond.o2}% O2, ${cond.p.toFixed(1)} kPa, gravity ${cond.g} g, ventilation ${cond.vent} cm/s. Estimated limiting O2 ${a.loc.toFixed(1)}%, margin ${a.margin.toFixed(1)} points, state "${a.state}". Effective flow ${a.uEff.toFixed(1)} cm/s. Evidence coverage ${a.coverage.level}: ${a.coverage.note} ${a.coverage.flags.join(" ")}` });

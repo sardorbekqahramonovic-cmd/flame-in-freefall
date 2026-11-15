@@ -342,7 +342,7 @@ window.VULKAN.INVESTIGATIONS = [
     tests: 1000,
     approxTests: true,
     scaleCm: 2,
-    objectives: "A family of gaseous-flame experiments on extinction limits, soot, flame design, solid-burning emulation and electric-field control of flames.",
+    objectives: "Run a family of gaseous-flame experiments on extinction limits, soot, flame design, solid-burning emulation and electric-field control of flames.",
     findings: [
       "CLD Flame: sooty microgravity flames contain about five to eight times (up to nearly ten times) more soot than in normal gravity.",
       "Highly diluted flames are more stable in microgravity and dilution limits extend, so lifted flames form at lower fuel concentrations.",
@@ -540,7 +540,7 @@ window.VULKAN.INVESTIGATIONS = [
     scaleCm: 10,
     planned: true,
     gravity: 0.166,
-    objectives: "The first-ever combustion experiment on another planetary body: burn materials at lunar gravity.",
+    objectives: "Run the first-ever combustion experiment on another planetary body: burn materials upward at lunar gravity.",
     findings: ["Planned. Will provide the first true partial-gravity flammability data, a gap in today's PSI data."],
     implications: {
       prevention: "Will test whether lunar gravity is a worst case for material flammability.",

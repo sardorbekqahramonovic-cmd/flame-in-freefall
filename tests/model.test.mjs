@@ -128,6 +128,32 @@ for (const [lang, fire, smoke, stop] of [["en", "Fire!", "smoke", "stop"], ["ru"
   }
 }
 E.setLang("en");
+
+// ---- Ask VULKAN knows its own model: how it works, its NASA check, its FM2 predictions, material limits ----
+for (const [lang, acc, fm2, kapton, smokeQ] of [
+  ["en", "How accurate is VULKAN's fire model?", "What does VULKAN predict for NASA's FM2 Moon test?", "Is Kapton safe in a Moon base at 30% oxygen?", "How does VULKAN detect smoke?"],
+  ["ru", "Насколько точна модель VULKAN?", "Что VULKAN предсказывает для FM2?", "Безопасен ли каптон на лунной базе при 30% кислорода?", "Как VULKAN обнаруживает дым?"],
+  ["uz", "VULKAN modeli qanchalik aniq?", "FM2 tajribasi uchun VULKAN nimani bashorat qiladi?", "Oy bazasida 30% kislorodda Kapton xavfsizmi?", "VULKAN tutunni qanday aniqlaydi?"],
+]) {
+  E.setLang(lang);
+  const ids = M.buildChunks().map((c) => c.id);
+  for (const id of ["MODEL-1", "MODEL-2", "MODEL-3", ...E.MATERIALS.map((m) => `MAT-${m.id}`)]) assert.ok(ids.includes(id), `${lang}: knowledge base has ${id}`);
+  const v = M.validationNumbers();
+  const a = await E.ai.ask(acc, E.SCENARIOS[1]);
+  assert.match(a.text, /\[MODEL-2\]/, `${lang}: accuracy answer cites the model check`);
+  assert.ok(a.text.includes(`${v.v2o}`) && a.text.includes(`${v.v1u}`), `${lang}: accuracy answer gives the numbers`);
+  const f = await E.ai.ask(fm2, E.SCENARIOS[1]);
+  assert.match(f.text, /\[MODEL-3\]/, `${lang}: FM2 answer cites the frozen predictions`);
+  assert.ok(f.text.includes(E.num(M.fm2Predictions()[0].loc, 1)), `${lang}: FM2 answer gives the Nomex limit`);
+  const k = await E.ai.ask(kapton, E.SCENARIOS[1]);
+  assert.match(k.text, /\[MAT-kapton\]/, `${lang}: material answer names its NASA anchor`);
+  assert.equal(E.ai.emergency(smokeQ), null, `${lang}: a short question about smoke is not the smoke command`);
+}
+E.setLang("en");
+assert.equal(E.ai.parseConditions("Is PET film flammable at 34% oxygen?", E.SCENARIOS[1]).materialId, "pet");
+assert.equal(E.ai.parseConditions("polysulfone housing in a lunar habitat", E.SCENARIOS[1]).materialId, "psu");
+assert.equal(E.ai.parseConditions("Is the pet food safe at 30%?", E.SCENARIOS[1]).materialId, "nomex", "lower-case pet is not PET film");
+assert.equal(E.int(2250), "2,250"); E.setLang("uz"); assert.equal(E.int(2250), "2\u00a0250"); E.setLang("en");
 console.log("All VULKAN model and language checks passed.");
 
 // Uzbek speech text: digits, units and acronyms are read as Uzbek words

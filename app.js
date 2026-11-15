@@ -60,8 +60,13 @@
             const s = src.get(id), url = s ? s.url : `https://ntrs.nasa.gov/citations/${id.slice(5)}`;
             return `<a class="cite ntrs" href="${esc(url)}" target="_blank" rel="noopener" title="${esc(s ? s.title : id)}">${esc(t("cite.NTRS", { y: s && s.year ? s.year : "" }).trim())}</a>`;
           }
+          if (/^MODEL(-[1-3])?$/.test(id) || /^MAT-[a-z]+$/.test(id)) {
+            const goto = id === "MODEL-2" ? "validation" : id === "MODEL-3" ? "fm2" : "view-risk";
+            const label = id.startsWith("MAT-") ? t("cite.MAT") : t("cite." + id.replace("-", ""));
+            return `<button class="cite model" type="button" data-goto="${goto}"${id.startsWith("MAT-") ? ` data-mat="${id.slice(4)}"` : ""}>${esc(label)}</button>`;
+          }
           const pre = id.split("-")[0];
-          const kind = ["ATM", "GAP", "HIST", "PHYS", "INSIGHT", "EARTH", "MODEL"].includes(pre) ? t("cite." + pre) : id;
+          const kind = ["ATM", "GAP", "HIST", "PHYS", "INSIGHT", "EARTH"].includes(pre) ? t("cite." + pre) : id;
           return `<span class="cite" style="cursor:default">${esc(kind)}</span>`;
         });
       if (/^[-•]\s+/.test(l)) {
@@ -78,6 +83,14 @@
   document.addEventListener("click", (e) => {
     const c = e.target.closest(".cite[data-inv]");
     if (c) openDrawer(c.dataset.inv);
+    const g = e.target.closest(".cite[data-goto]");
+    if (g) {
+      const mat = g.dataset.mat;
+      if (mat && E.MATERIALS.some((m) => m.id === mat)) { store.set("material", mat); if (state.sim) state.sim.materialId = mat; }
+      $("#drawer-root").innerHTML = "";
+      const go = () => { const el = document.getElementById(g.dataset.goto); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+      if (location.hash !== "#risk") { location.hash = "risk"; setTimeout(go, 250); } else { render("risk"); setTimeout(go, 50); }
+    }
   });
 
   /* ---------------- top bar ---------------- */
@@ -225,7 +238,7 @@
       <div class="grid g4">
         <div class="panel kpi"><span class="v num">${E.INVESTIGATIONS.length}</span><span class="l">${t("ov.kpi1", { f: flown.length, p: E.INVESTIGATIONS.length - flown.length })}</span></div>
         <div class="panel kpi"><span class="v num">${yrs[0]}–${yrs[1]}</span><span class="l">${t("ov.kpi2")}</span></div>
-        <div class="panel kpi"><span class="v num">≈${(Math.round(tests / 50) * 50).toLocaleString(E.lang === "en" ? "en-US" : E.lang === "ru" ? "ru-RU" : "uz-Latn-UZ")}</span><span class="l">${t("ov.kpi3")}</span></div>
+        <div class="panel kpi"><span class="v num">≈${E.int(Math.round(tests / 50) * 50)}</span><span class="l">${t("ov.kpi3")}</span></div>
         <div class="panel kpi"><span class="v num">10–85%</span><span class="l">${t("ov.kpi4")}</span></div>
       </div>
       <div class="split">
@@ -527,7 +540,8 @@
     if (!state.sim) state.sim = { o2: s.o2, p: s.p, g: s.g, vent: s.vent, materialId: store.get("material", "nomex") };
     const sim = state.sim;
     v.innerHTML = `
-      <div class="view-head"><div><h2>${t("rk.title")}</h2><p>${t("rk.desc")}</p></div></div>
+      <div class="print-only print-head" id="print-head"></div>
+      <div class="view-head"><div><h2>${t("rk.title")}</h2><p>${t("rk.desc")}</p></div><button type="button" class="btn" id="print-report">${t("rp.button")}</button></div>
       <div class="split split-narrow-left">
         <div class="panel controls">
           <div class="presets">${E.SCENARIOS.map((x) => `<button class="chip" data-preset="${x.id}" type="button" aria-pressed="${x.id === s.id}">${esc(x.label.split(" (")[0])}</button>`).join("")}</div>
@@ -552,6 +566,7 @@
     const inputs = { o2: "#sim-o2", p: "#sim-p", g: "#sim-g", vent: "#sim-v" };
     Object.entries(inputs).forEach(([k, sel]) => $(sel).addEventListener("input", (e) => { sim[k] = parseFloat(e.target.value); updateRisk(); }));
     $("#sim-mat").addEventListener("change", (e) => { sim.materialId = e.target.value; store.set("material", sim.materialId); updateRisk(); });
+    $("#print-report").addEventListener("click", printReport);
     $$("[data-preset]").forEach((b) => b.addEventListener("click", () => {
       const x = E.SCENARIOS.find((y) => y.id === b.dataset.preset);
       Object.assign(sim, { o2: x.o2, p: x.p, g: x.g, vent: x.vent });
@@ -588,6 +603,37 @@
     $("#gravity-table").innerHTML = `<thead><tr><th>${t("rk.thG")}</th><th class="num">${t("rk.thLimit")}</th><th>${t("rk.thState")}</th></tr></thead><tbody>${worlds.map(([n, g]) => { const r = M.assess({ ...sim, g }); return `<tr><td>${n}</td><td class="num">${n1(r.loc)}%</td><td><span class="pill ${["ok", "warn", "ember", "crit"][r.cls]}">${r.state}</span></td></tr>`; }).join("")}</tbody>`;
     $("#evidence").innerHTML = `<p style="font-size:.9rem">${esc(a.coverage.note)}</p><div style="display:grid;gap:8px;margin-top:10px">${a.coverage.near.map((n) => `<div style="font-size:.86rem"><button class="cite" data-inv="${n.inv.id}" type="button">${esc(n.inv.name)}</button> ${n.d === 0 ? t("rk.testedHere") : t("rk.nearest")}: <span class="mono">${range(n.inv.o2, false, "%")} · ${range(n.inv.p, false, KPA())}</span></div>`).join("")}</div><p class="note" style="margin-top:10px">${t("rk.physics")}</p>`;
   }
+  /* Fire-risk report: the current estimate as a printable page (Print, or Save as PDF). Light theme on paper. */
+  let printTheme = null;
+  function fillPrintHead() {
+    const el = $("#print-head"), sim = state.sim;
+    if (!el || !sim) return;
+    const a = M.assess(sim), url = location.href.split("#")[0];
+    el.innerHTML = `<div class="eyebrow">VULKAN</div><h1>${t("rp.title")}</h1><p>${t("rp.meta", { date: new Date().toISOString().slice(0, 10), m: esc(a.material.label), o2: n1(sim.o2), p: n1(sim.p), psia: psia(sim.p), g: sim.g === 0 ? t("rk.orbit") : `${E.num(sim.g, 3)} g`, v: n1(sim.vent) })}</p><p class="note">${t("rp.foot", { url: esc(url) })}</p>`;
+  }
+  function startPrint() {
+    if (printTheme !== null) return;
+    const root = document.documentElement;
+    printTheme = root.dataset.theme || "";
+    root.dataset.theme = "light";
+    document.body.classList.add("print-report");
+    renderRisk();
+    fillPrintHead();
+  }
+  function endPrint() {
+    if (printTheme === null) return;
+    const root = document.documentElement;
+    if (printTheme) root.dataset.theme = printTheme; else delete root.dataset.theme;
+    printTheme = null;
+    document.body.classList.remove("print-report");
+    if (!$("#view-risk").hidden) renderRisk();
+  }
+  function printReport() {
+    startPrint();
+    setTimeout(() => window.print(), 60); // the page returns to normal on "afterprint"
+  }
+  window.addEventListener("beforeprint", () => { if (!$("#view-risk").hidden && state.sim) startPrint(); });
+  window.addEventListener("afterprint", endPrint);
   function anchorShort(m) {
     const a = M.anchor(m);
     return a.kind === "loi" ? t("rk.optLoi", { o2: n1(a.o2) }) : t("rk.optMoc", { o2: n1(a.o2) });
@@ -756,7 +802,7 @@
       const cited = (res.sources || []).filter((s) => res.text.includes(`[${s.id}]`));
       div.innerHTML = renderAnswer(res.text, res.sources) +
         (cited.length ? `<div class="sources"><span class="eyebrow">${t("ask.sources")}</span><ul>${cited.map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>${s.year ? ` <span class="muted">(${s.year})</span>` : ""}</li>`).join("")}</ul></div>` : "") +
-        (res.ntrs && res.ntrs.queries && res.ntrs.queries.length ? `<p class="note" style="margin-top:6px">${esc(t("ask.searched", { n: (res.ntrs.total || 0).toLocaleString(E.lang === "en" ? "en-US" : E.lang === "ru" ? "ru-RU" : "uz-Latn-UZ"), q: res.ntrs.queries[0].q }))}</p>` : "") +
+        (res.ntrs && res.ntrs.queries && res.ntrs.queries.length ? `<p class="note" style="margin-top:6px">${esc(t("ask.searched", { n: E.int(res.ntrs.total || 0), q: res.ntrs.queries[0].q }))}</p>` : "") +
         (res.confidence || res.gaps.length ? `<div class="badge-row">${res.confidence ? `<span class="pill ${/High/.test(res.confidence) ? "ok" : /Medium/.test(res.confidence) ? "warn" : "crit"}">${esc(t("ask.conf", { c: lv(res.confidence) }))}</span>` : ""}${res.gaps.map((g) => `<span class="pill warn" title="${esc(g)}">⚠ ${t("ask.gap")}: ${esc(g.split(/[.(;]/)[0])}</span>`).join("")}</div>` : "") +
         (res.notice ? `<p class="note" style="margin-top:8px">${esc(res.notice)}</p>` : "") +
         (res.engine ? `<div class="engine" style="margin-top:8px">${res.engine === "offline" ? t("eng.offline") : E.ai.providerName(res.provider) + " · " + esc(res.engine)}</div>` : "");
@@ -897,7 +943,7 @@
         corpus = r.ok ? (await r.json()).ntrs || {} : {};
       } catch (e) { corpus = {}; }
     }
-    const nf = (n) => Number(n || 0).toLocaleString(E.lang === "en" ? "en-US" : E.lang === "ru" ? "ru-RU" : "uz-Latn-UZ");
+    const nf = (n) => E.int(n || 0);
     const c = (k) => corpus[k] > 0;
     const v = { mc: nf(corpus["microgravity combustion"]), sf: nf(corpus["spacecraft fire"]), fl: nf(corpus["flammability"]), fs: nf(corpus["fire suppression"]), sd: nf(corpus["smoke detection"]) };
     const all = ["microgravity combustion", "spacecraft fire", "flammability", "fire suppression", "smoke detection"].every(c);
@@ -905,6 +951,7 @@
   }
 
   /* ---------------- gaps & earth ---------------- */
+  const MODEL_SRC = ["hirsch2010", "hirsch2011", "hirsch2007", "bass2013", "bass2014", "zhao2015", "bass2019", "ferkul2026"];
   function renderGaps() {
     const allSrc = new Map();
     E.INVESTIGATIONS.forEach((i) => i.links.forEach((l) => allSrc.set(l.url, l.label)));
@@ -917,7 +964,8 @@
       </div>
       <h2>${t("gp.earth")}</h2>
       <div class="grid g4">${E.SPINOFFS.map((x) => `<div class="panel spin-card"><div class="eyebrow">${esc(x.era)}</div><h3 style="margin:6px 0">${esc(x.title)}</h3><p style="font-size:.9rem">${esc(x.text)}</p><p style="margin-top:8px;font-size:.85rem"><a href="${x.link.url}" target="_blank" rel="noopener">${esc(x.link.label)}</a></p></div>`).join("")}</div>
-      <div class="panel"><h3>${t("gp.refs")}</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">${[...allSrc].map(([u, l]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(l)}</a></li>`).join("")}<li>${t("gp.loi")}</li></ul></div>`;
+      <div class="panel"><h3>${t("gp.refs")}</h3><ul class="findings" style="margin-top:8px;font-size:.88rem">${[...allSrc].map(([u, l]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(l)}</a></li>`).join("")}</ul>
+        <h4 style="margin-top:14px">${t("gp.refsModel")}</h4><ul class="findings" style="margin-top:8px;font-size:.88rem">${MODEL_SRC.filter((k) => E.SRC[k]).map((k) => `<li><a href="${E.SRC[k].url}" target="_blank" rel="noopener">${esc(E.SRC[k].label)}</a></li>`).join("")}<li>${t("gp.loi")}</li></ul></div>`;
   }
 
   /* ---------------- boot ---------------- */

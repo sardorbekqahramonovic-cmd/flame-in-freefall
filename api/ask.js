@@ -23,7 +23,7 @@ Rules:
 - Base the answer on the evidence passages in the user turn. Passages whose id starts with "NTRS-" are abstracts of NASA technical reports found for this question; use them like the others.
 - Cite every claim taken from a passage with its id in square brackets, e.g. [BASS], [FLEX#1] or [NTRS-20205004657]. Never invent ids.
 - If the passages do not fully answer the question, say in one short sentence what NASA data is missing. You may then add what is generally known in science or engineering, in separate sentences that start with "In general" (in the answer language) and end with [GENERAL]. Never put [GENERAL] in a sentence with a passage citation, and never present general knowledge as NASA data.
-- Passage MODEL is VULKAN's screening model output. Present it as an estimate, not as measured data.
+- Passage MODEL is VULKAN's screening model output for the question. Passages MODEL-1, MODEL-2 and MODEL-3 describe how that model works, how it was checked against NASA measurements, and its predictions for NASA's FM2 Moon experiment, frozen before FM2 flies; MAT- passages give NASA material test limits. Present model numbers as estimates, not as measured data, and keep the check results and predictions exactly as written.
 - PSI holds no partial-gravity (Moon or Mars) combustion data. When the question involves the Moon or Mars, say that results are extrapolated from microgravity and 1 g data.
 - Rocket and propellant fires are out of scope.
 - The mission context line is the cabin atmosphere the user picked in the app, not the natural atmosphere of the Moon or Mars. Say "in a cabin at ..." when you use it. Mars air is thin carbon dioxide and cannot sustain a fire; fires happen inside pressurised habitats, rovers and suits.`;

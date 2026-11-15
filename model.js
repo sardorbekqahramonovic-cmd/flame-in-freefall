@@ -163,6 +163,30 @@
     });
   }
 
+  /* Plain-text descriptions shared by the knowledge base and the offline reasoner. */
+  const num1 = (x) => (E.num ? E.num(x, 1) : Number(x).toFixed(1));
+  function anchorText(material) {
+    const a = anchor(material), ps = num1(a.kPa / PSI);
+    const src = material.moc && E.SRC && E.SRC[material.moc.src] ? E.SRC[material.moc.src].label : "";
+    if (a.kind === "moc") return t("ch.anchorMoc", { o2: num1(a.o2), psia: ps, src });
+    if (a.kind === "est") return t("ch.anchorEst", { o2: num1(a.o2), psia: ps, src });
+    return t("ch.anchorLoi", { o2: num1(a.o2) });
+  }
+  function fm2Line(pred) {
+    const calls = pred.tests.map((x) => `${x.o2}%: ${t("fm." + x.call)}`).join(", ");
+    return t("ch.m3line", { m: pred.material.label, x: num1(pred.loc), lo: num1(pred.range[0]), hi: num1(pred.range[1]), calls });
+  }
+  function validationNumbers() {
+    const v = validate();
+    return { n: v.n, v1u: v.v1.unsafe, v1o: v.v1.ok, v2o: v.v2.ok, v2u: v.v2.unsafe, v2c: v.v2.cons, nt: v.n - v.nIndep, ni: v.nIndep };
+  }
+  function materialText(m) {
+    const lunar = (E.SCENARIOS || []).find((s) => s.id === "lunar") || { o2: 30, p: 70.3, g: 0.166, vent: 10 };
+    const earth = assess({ o2: 21, p: 101.3, g: 1, vent: 10, materialId: m.id });
+    const moon = assess({ o2: lunar.o2, p: lunar.p, g: lunar.g, vent: lunar.vent, materialId: m.id });
+    return t("ch.mat", { m: m.label, anchor: anchorText(m), note: m.note || "", l1: num1(earth.loc), lm: num1(moon.loc), st: moon.state.toLowerCase() });
+  }
+
   function envDist(inv, o2, p) {
     const dO2 = Math.max(0, inv.o2[0] - o2, o2 - inv.o2[1]) / 15;
     const dP = Math.max(0, inv.p[0] - p, p - inv.p[1]) / 40;
@@ -310,6 +334,11 @@
     E.SCENARIOS.forEach((s) => chunks.push({ id: `ATM-${s.id}`, title: `${t("cite.ATM")}: ${s.label}`, text: t("ch.atm", { s: s.label, o2: fmt(s.o2), p: fmt(s.p), psia: fmt((s.p / 6.895).toFixed(1)), g: fmt(s.g), note: s.note }) }));
     E.SPINOFFS.forEach((s, i) => chunks.push({ id: `EARTH-${i + 1}`, title: `${t("ch.earth")}: ${s.title}`, text: `${t("ch.earth")} (${s.era}): ${s.title}. ${s.text}` }));
     E.PRIMER.forEach((p, i) => chunks.push({ id: `PHYS-${i + 1}`, title: p.title, text: `${p.title}. ${p.text}` }));
+    // the model itself: how it works, how it was checked against NASA data, its frozen FM2 predictions, material limits
+    chunks.push({ id: "MODEL-1", title: t("ch.m1Title"), text: t("ch.m1") });
+    chunks.push({ id: "MODEL-2", title: t("ch.m2Title"), text: t("ch.m2", validationNumbers()) });
+    chunks.push({ id: "MODEL-3", title: t("ch.m3Title"), text: t("ch.m3", { d: FM2_FROZEN, lines: fm2Predictions().map(fm2Line).join(" ") }) });
+    E.MATERIALS.forEach((m) => chunks.push({ id: `MAT-${m.id}`, title: t("ch.matTitle", { m: m.label }), text: materialText(m) }));
     return chunks;
   }
 
@@ -346,5 +375,5 @@
     return { search };
   }
 
-  E.model = { assess, curve, buoyantFlow, limitingO2, limitingO2v1, band, anchor, validate, CHECKS, fm2Predictions, FM2_FROZEN, FM2_TESTS, rank, DEFAULT_WEIGHTS, envDist, buildChunks, makeIndex, tokens, PARAMS };
+  E.model = { assess, curve, buoyantFlow, limitingO2, limitingO2v1, band, anchor, anchorText, validate, validationNumbers, CHECKS, fm2Predictions, fm2Line, FM2_FROZEN, FM2_TESTS, rank, DEFAULT_WEIGHTS, envDist, buildChunks, makeIndex, tokens, PARAMS };
 })();

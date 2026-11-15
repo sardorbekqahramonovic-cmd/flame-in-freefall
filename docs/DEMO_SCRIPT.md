@@ -1,29 +1,40 @@
-# Demo video script
+# Demo and pitch script
 
-Space Apps asks for a short project demo video. Check the current Project Submission Guide for the length limit; the main script below runs 30 seconds, and an extended 2-minute version follows for the local pitch. Record at 1920×1080 in the dark theme with the mission set to **Lunar surface habitat**. The narration can be in Uzbek if you add English subtitles.
+Two versions: the 30-second video the judges see first, and a 2-minute live demo for the local pitch. Every number below is what the live app shows today (model v2, anchored to NASA test data). Before a live demo, open the site once with the network on so it also works offline, set the mission to **Lunar surface habitat**, and use the dark theme.
 
-## 30-second version
+## 30-second video (as published)
 
-| Time | Screen | Narration |
+| Time | Screen | Narration (English captions burned in) |
 |---|---|---|
-| 0:00–0:05 | Overview hero: the yellow 1 g flame next to the blue microgravity flame. | "Fire in space doesn't rise. It hides, it spreads in strange ways, and NASA has fifty years of data on it." |
-| 0:05–0:11 | Flammability Map, cursor on the cluster at 21% / 1 atm, then on the Moon-base diamond. | "VULKAN puts all of it on one map. Most tests were in sea-level air. Moon bases will run at thirty-four percent oxygen." |
-| 0:11–0:19 | Fire Risk Explorer: pick Nomex, click the rover preset, the verdict turns orange "Flammable". | "Pick a material and a mission. Nomex, safe on the ISS, can burn in a lunar rover, and VULKAN shows the flight data behind that." |
-| 0:19–0:26 | Ask VULKAN: click "Why don't Earth extinguisher standards apply in microgravity?", answer with citation chips. | "Ask anything. Answers come only from NASA evidence, with citations and gap warnings." |
-| 0:26–0:30 | Mission Ranker sliding a weight, then the logo. | "VULKAN: NASA's fire science, ranked for the Moon and Mars." |
+| 0:00–0:04 | The yellow 1 g flame next to the blue microgravity flame. | "In space, fire behaves differently, and Moon bases will be oxygen-rich." |
+| 0:04–0:09 | Title card with the team. | "Meet VULKAN, our answer to NASA's Flame in Freefall challenge." |
+| 0:09–0:15 | Investigation Atlas, then the ranked insights. | "It turns 19 NASA fire experiments, and live NASA reports, into cited safety answers." |
+| 0:15–0:21 | Fire Risk Explorer: oxygen slider from 21% to 34% for Nomex; the verdict turns to "Highly flammable". Then the language switch. | "Test a material for your mission, or ask by voice, in English, Russian or Uzbek." |
+| 0:21–0:25 | Ask VULKAN answer with citation chips, then the Flammability Map. | "Every claim links to NASA data, and gaps are flagged." |
+| 0:25–0:30 | End card with the team and the link. | "Safer crews on the Moon, Mars and Earth." |
 
-## 2-minute version (local pitch)
+## 2-minute live demo (local pitch)
 
-1. **Problem (0:00–0:20).** Apollo 1, Apollo 13 and the Mir fire on the timeline. "Fire is one of the deadliest risks in spaceflight. NASA has flown dozens of combustion experiments, but the results are scattered across reports and are hard to compare. Artemis habitats will use atmospheres no crew has lived in."
-2. **Atlas (0:20–0:40).** Search "Nomex", open BASS, show conditions, findings and the three implication boxes, then compare BASS with Saffire I–III. "Nineteen investigations, each with its fuels, oxygen, pressure, flow, sensors and findings, linked to the NASA source."
-3. **Map (0:40–1:00).** "Here is the insight a table can't give you: almost every test sits at 21% oxygen and one atmosphere. The exploration atmosphere, 34% at 8.2 psia, is covered only by Saffire IV–VI and SoFIE."
-4. **Risk Explorer (1:00–1:25).** Nomex at ISS air shows "Self-extinguishing"; switch to the rover preset and it shows "Flammable". Point at the Moon marker on the curve and the gravity table. "Lunar gravity creates gentle buoyant flow, close to the speed where materials burn most easily, so the Moon could be a worst case. VULKAN flags this clearly as an extrapolation, because no partial-gravity data exists yet. That is why FM2 matters."
-5. **Ask VULKAN (1:25–1:45).** Tap the microphone and say "Is Nomex flammable at 34% oxygen and 8.2 psi on the Moon?" VULKAN reads the short answer aloud. Show the model numbers, citations, the confidence badge and the gap warnings. Then say "Hey VULKAN, fire": the immediate actions appear and are spoken at once.
-6. **Impact (1:45–2:00).** Ranker and Gaps view. "Researchers find answers in minutes. Engineers get concrete actions: correct Earth tests, re-screen fabrics, size extinguishers, detect sub-micron smoke. And it runs offline, in any browser." Click **UZ**, then **RU** in the top bar: "The whole dashboard, and the AI's answers, also work in Uzbek and Russian."
+1. **Problem (0:00–0:15).** Overview. Point at the one-line evidence gap: "Of the 7 solid-material fire investigations NASA has flown, 6 tested ISS air, only 2 tested the oxygen-rich air planned for Moon bases, and none tested Moon or Mars gravity. Artemis crews will live in air that has barely been tested."
+2. **The record (0:15–0:35).** Investigation Atlas: search "Nomex", open BASS, show conditions, findings and the three implication boxes. "Nineteen investigations, each linked to its NASA source. Here is one finding that matters: some materials burn at lower oxygen in microgravity than on Earth."
+3. **Fire Risk Explorer (0:35–1:05).** Pick **Kapton polyimide film** (wire insulation).
+   - Click **ISS / Orion cabin**: "Near the limit."
+   - Click **Lunar surface habitat**: "Flammable", estimated limit 27.3% against 30% cabin oxygen.
+   - Say: "The usual shortcut, the oxygen index, says Kapton needs 37% oxygen, so it would look safe here. NASA's own upward-burning test says 26%. VULKAN uses NASA's number."
+   - Point at the shaded band: "Every estimate carries its likely range, and the warning says Moon values are extrapolations."
+4. **Proof (1:05–1:30).** Scroll to **How accurate is this model?** "We checked our model against 12 NASA measurements. Our first version made 8 unsafe calls. The current one has none: 10 correct, 2 on the cautious side, and every row links to its NASA report." Then the FM2 table: "And here is a prediction NASA will test. FM2, the first fire experiment on the Moon, burns fabric at 37, 33, 29 and 25% oxygen. We froze our calls on November 14: Nomex burns at the first three, and 25% is too close to call. Our limit, 24.8%, sits inside NASA's expected 24 to 26%."
+5. **Ask VULKAN (1:30–1:50).** Tap the microphone and ask "How accurate is VULKAN's fire model?" (or press the suggestion). The answer cites the model check; click the chip to jump back to the table. Then type "fire": the immediate actions appear at once, even offline. Optional: switch to **UZ** and ask "Oyda 34% kislorod va 8,2 psi'da Nomex yonadimi?"
+6. **Close (1:50–2:00).** Press **Save report (PDF)** on the Fire Risk Explorer: "Engineers can take a two-page report into a design review. VULKAN installs like an app and works with no network, in three languages."
+
+## Questions judges may ask
+
+- **"Nomex shows Flammable even in ISS air. Is that right?"** That is one of the two cautious calls in the check table. BASS's narrow Nomex strips did not keep burning at 21.5%, and VULKAN says "flammable" there. We keep that bias on purpose: NASA itself recommends derating normal-gravity limits for microgravity, and a screening tool should err toward caution.
+- **"Why not machine learning?"** There are only a few dozen NASA limit measurements. A model that small data can support has to be simple and auditable, so every constant comes from a NASA measurement and every check is shown.
+- **"Where is the AI?"** Ask VULKAN: retrieval over 153 curated evidence passages plus live NASA Technical Reports Server search, answered by Claude or an OpenAI model that must cite every claim, with an offline reasoner when there is no network.
+- **"What happens when FM2 reports?"** The predictions are frozen in the public repository. If Nomex burns at 25% or goes out at 29%, the partial-gravity term is wrong and we correct it in public.
 
 ## Recording tips
 
 - Use the browser at 110% zoom so the text reads on a phone.
 - Hide the bookmarks bar and use a clean browser profile.
-- Record the screen with OBS, add narration and English subtitles in CapCut or DaVinci Resolve.
 - Keep the cursor still while you talk; move it only to point.

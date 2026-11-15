@@ -385,3 +385,22 @@ a.cite.ntrs:hover { text-decoration: underline; }
 }
 .btn.small { padding: 6px 12px; font-size: .85rem; margin-left: 6px; }
 .va-table.fm th.num:not(:nth-child(2)), .va-table.fm td.tst { text-align: center; }
+#validation, #fm2, #view-risk { scroll-margin-top: 96px; }
+.cite.model { cursor: pointer; }
+/* fire-risk report (print / save as PDF from the Fire Risk Explorer) */
+.print-only { display: none; }
+@media print {
+  @page { margin: 12mm; }
+  body.print-report { background: #fff; }
+  body.print-report header.topbar, body.print-report footer, body.print-report #drawer-root, body.print-report .tooltip,
+  body.print-report .view:not(#view-risk), body.print-report .controls, body.print-report #fm2, body.print-report .va-table,
+  body.print-report .view-head { display: none !important; }
+  body.print-report .print-only { display: block !important; }
+  body.print-report .print-head h1 { font-size: 1.6rem; margin: 4px 0; }
+  body.print-report .print-head { margin-bottom: 10px; }
+  body.print-report main.wrap { padding: 0; max-width: none; }
+  body.print-report .split { display: block !important; }
+  body.print-report .panel, body.print-report .verdict { box-shadow: none !important; break-inside: avoid; }
+  body.print-report .grid.g2 { display: grid !important; grid-template-columns: 1fr 1fr; }
+  body.print-report .model-check { break-inside: avoid; margin-top: 12px; }
+}

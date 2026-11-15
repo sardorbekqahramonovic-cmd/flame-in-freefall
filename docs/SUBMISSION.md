@@ -44,9 +44,9 @@ https://flame-in-freefall-eight.vercel.app
 - **Overview** opens with the evidence gap in one line (6 of 7 solid-material flight investigations tested ISS air, 2 of 7 tested Moon-base air, 0 tested Moon or Mars gravity). It then ranks ten fire-safety insights by mission impact. Each insight has a recommended engineering action and its citations.
 - **Investigation Atlas** summarizes every investigation: objectives, fuels and sample sizes, oxygen, pressure and flow ranges, diluents, sensors and findings. It has search, filters and side-by-side comparison.
 - **Flammability Map** plots each investigation's tested oxygen–pressure range against real spacecraft atmospheres. It shows that most data sits at 21% O₂ and 1 atm. Exploration atmospheres (30–34% O₂ at 8.2–10.2 psia) are covered only by Saffire IV–VI and SoFIE.
-- **Fire Risk Explorer** estimates whether a material can sustain a flame at any oxygen level, pressure, gravity and ventilation speed, with a likely range, and shows the flight data behind the estimate. It also shows how the model scores against 12 NASA measurements, and VULKAN's frozen predictions for FM2.
+- **Fire Risk Explorer** estimates whether a material can sustain a flame at any oxygen level, pressure, gravity and ventilation speed, with a likely range, and shows the flight data behind the estimate. It also shows how the model scores against 12 NASA measurements and VULKAN's frozen predictions for FM2, and it saves the current estimate as a two-page fire-risk report (PDF).
 - **Mission Ranker** scores investigations with weights the team can adjust and explains each score.
-- **Ask VULKAN** answers plain-language questions with citations, a confidence level and research-gap warnings.
+- **Ask VULKAN** answers plain-language questions with citations, a confidence level and research-gap warnings. It can also explain its own model: how accurate it is against NASA data and what it predicts for FM2.
 - **Gaps & Earth** lists the open questions, the planned investigations that will answer them (FM2, FLARE), and NASA fire-safety spinoffs.
 
 **Languages and voice.** The interface, the curated content and the answers are available in English, Russian and Uzbek. Engineers and students who do not read English can use the NASA record too.
@@ -55,7 +55,7 @@ A voice assistant lets users ask by speaking and hear the answer. Voice answers 
 
 **How it works.** VULKAN is a static web app (HTML, CSS, JavaScript and hand-built SVG charts). It loads fast and runs offline. The intelligence layer has four parts:
 
-1. **Curated record.** A retrieval engine indexes 139 evidence passages built from the curated NASA data.
+1. **Curated record.** A retrieval engine indexes 153 evidence passages built from the curated NASA data, including NASA material test limits and the model's own check against NASA measurements.
 2. **Live NASA reports.** For each question, an AI model writes two English keyword searches, and VULKAN queries the NASA Technical Reports Server (NTRS) public API. The matching report abstracts are added as extra evidence, cited by their NTRS record number. NTRS holds 1,077 records on microgravity combustion, 871 on spacecraft fire and 682 on flammability.
 3. **Answer model.** Claude (Anthropic) or an OpenAI model answers from these passages only, and must cite each claim. When the NASA evidence does not cover a question, VULKAN says what data is missing. Any background it adds is labelled "general knowledge, not NASA data". API keys stay in serverless functions, with rate limits and cost caps.
 4. **Offline reasoner.** When no AI service is available, an offline reasoner answers from the same evidence.
@@ -113,7 +113,7 @@ Next, we want to add the FM2 and FLARE results as they are published, native Uzb
 
 ## NASA Data
 
-We curated 19 combustion investigations, 10 insights, 12 historic events and 139 evidence passages from the NASA sources below. Each record in the app links back to its source.
+We curated 19 combustion investigations, 10 insights, 12 historic events, 11 material test records and 153 evidence passages from the NASA sources below. Each record in the app links back to its source.
 
 - **PSI Data Repository, Combustion Science.** The primary source for investigation conditions, fuels, diagnostics and findings: https://psi.nasa.gov/physci/repo/search?q=combustion
 - **NASA Technical Reports Server (NTRS).** Its public search API is queried live for every AI answer, and the abstracts it returns are cited by record number: https://ntrs.nasa.gov
@@ -146,7 +146,7 @@ How we used them:
 **Other data, references and tools:**
 
 - Meyer et al. (2018), "Evaluation of spacecraft smoke detector performance in the low-gravity environment", *Fire Safety Journal*, doi:10.1016/j.firesaf.2018.04.004
-- Limiting Oxygen Index values: typical ASTM D2863 literature values for each material
+- Limiting Oxygen Index values (typical ASTM D2863 literature values): used for the four materials without a NASA upward-burning limit, where the app flags them as unverified, and for the first model version shown in the comparison
 - Fonts: Archivo, IBM Plex Sans and IBM Plex Mono (Google Fonts, SIL Open Font License)
 - Anthropic Claude API and the @anthropic-ai/sdk package (MIT license)
 - OpenAI API (models listed under Tools)
