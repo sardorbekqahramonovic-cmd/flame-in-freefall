@@ -5,6 +5,7 @@ globalThis.window = {};
 const require = createRequire(import.meta.url);
 require("../data/investigations.js");
 require("../data/insights.js");
+require("../data/results.js");
 require("../data/l10n-ru.js");
 require("../data/l10n-uz.js");
 require("../i18n.js");
@@ -184,5 +185,35 @@ for (const said of ["Hey Vulkan", "hey vulkan what is BASS", "Xey Vulqon, savol"
 for (const said of ["vulkanizatsiya", "volcanic", "Sardor", "hey ember", "M1"]) assert.ok(!E.voice.WAKE_RX.test(said), `not wake: ${said}`);
 assert.equal(E.voice.speechText("VULKAN says", "en"), "Vulkan says");
 assert.ok(E.voice.speechText("VULKAN javob beradi", "uz").startsWith("Vulkan"));
+
+// New test results: model check, FM2 scoring, knowledge base and citations
+{
+  assert.deepEqual(window.VULKAN_RESULTS, []);
+  const P = 6.89476;
+  window.VULKAN_RESULTS = [
+    { id: "t1", exp: "FM2", mat: "nomex", kind: "burns", o2: 29, p: 8.2 * P, g: 0.166, vent: 0, src: "https://ntrs.nasa.gov/citations/1", date: "2027-01-01" },
+    { id: "t2", exp: "FM2", mat: "nomex", kind: "noburn", o2: 25, p: 8.2 * P, g: 0.166, vent: 0, src: "https://ntrs.nasa.gov/citations/2" },
+    { id: "t3", exp: "FM2", mat: "nomex", kind: "noburn", o2: 33, p: 8.2 * P, g: 0.166, vent: 0, src: "https://ntrs.nasa.gov/citations/3" },
+    { id: "t4", exp: "White Sands", mat: "kapton", kind: "limit", o2: 26, p: 14.7 * P, g: 1, vent: 0, src: "https://ntrs.nasa.gov/citations/4" },
+    { id: "bad", exp: "", mat: "nomex", kind: "burns", o2: 29, p: 56, g: 0.166 },
+  ];
+  E.setLang("en");
+  const R = M.results();
+  assert.equal(R.length, 4, "invalid entries are dropped");
+  assert.deepEqual(R.map((r) => r.fm2 && r.fm2.outcome), ["hit", "edge", "miss", null]);
+  assert.equal(R[0].v, "ok"); assert.equal(R[1].v, "cons"); assert.equal(R[3].v, "ok");
+  for (const lang of ["en", "ru", "uz"]) {
+    E.setLang(lang); E.ai.resetIndex();
+    const ids = E.ai.getIndex().chunks.map((c) => c.id);
+    assert.ok(["RES-1", "RES-2", "RES-3", "RES-4"].every((x) => ids.includes(x)), "result chunks in " + lang);
+    const fm = await E.ai.ask("What does VULKAN predict for NASA's FM2 Moon test?", E.SCENARIOS.find((x) => x.id === "lunar") || E.SCENARIOS[0]);
+    if (lang === "en") assert.match(fm.text, /\[RES-1\]/, "FM2 answer cites the scored result");
+  }
+  E.setLang("en");
+  window.VULKAN_RESULTS = []; E.ai.resetIndex();
+  assert.ok(!E.ai.getIndex().chunks.some((c) => c.id.startsWith("RES-")));
+  console.log("New test results checks passed.");
+}
+
 console.log("Uzbek speech text checks passed.");
 

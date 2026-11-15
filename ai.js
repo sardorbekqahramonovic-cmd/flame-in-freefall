@@ -208,7 +208,9 @@
     const lines = [t("ai.fmHead", { d: E.model.FM2_FROZEN }), t("ai.fmSetup")];
     preds.forEach((p) => lines.push(`- ${E.model.fm2Line(p)} [MODEL-3]`));
     lines.push(`- ${t("ai.fmNasa", { x: E.num(nomex.loc, 1) })} [FM2]`);
-    lines.push(t("ai.fmTest"));
+    const scored = E.model.results().filter((r) => r.fm2);
+    if (scored.length) scored.forEach((r) => lines.push(`- ${t("ai.fmScored", { m: r.material.label, o2: E.num(r.o2, 1), obs: t(r.kind === "burns" ? "nr.kBurns" : r.kind === "noburn" ? "nr.kNoburn" : "nr.kLimit"), o: t("nr.fm." + r.fm2.outcome) })} [RES-${r.n}]`));
+    else lines.push(t("ai.fmTest"));
     return { text: lines.join("\n"), spoken: speakable(t("sp.fm", { m: "Nomex", x: E.num(nomex.loc, 1) })), cites: ["FM2"], confidence: "Medium", gaps: [t("gapf.g")], engine: "offline" };
   }
 
@@ -260,7 +262,7 @@
     }
 
     if (!wantsCompare && !wantsRank) {
-      const used = hits.filter((h) => h.c.inv || h.c.id.startsWith("PHYS") || h.c.id.startsWith("HIST") || h.c.id.startsWith("GAP") || h.c.id.startsWith("ATM") || h.c.id.startsWith("EARTH") || h.c.id.startsWith("MODEL") || h.c.id.startsWith("MAT-")).filter((h) => !(cond && h.c.id === `MAT-${cond.materialId}`)).slice(0, cond ? 3 : 5);
+      const used = hits.filter((h) => h.c.inv || h.c.id.startsWith("PHYS") || h.c.id.startsWith("HIST") || h.c.id.startsWith("GAP") || h.c.id.startsWith("ATM") || h.c.id.startsWith("EARTH") || h.c.id.startsWith("MODEL") || h.c.id.startsWith("MAT-") || h.c.id.startsWith("RES-")).filter((h) => !(cond && h.c.id === `MAT-${cond.materialId}`)).slice(0, cond ? 3 : 5);
       const evStart = lines.length;
       if (used.length) {
         if (!cond) lines.push(t("ai.record"));
@@ -298,7 +300,7 @@
     const s = norm(q);
     const forced = [...(wantsValidation(s) ? ["MODEL-2", "MODEL-1"] : []), ...(wantsFm2(s, cond) ? ["MODEL-3", "FM2"] : []), ...(cond ? [`MAT-${cond.materialId}`] : [])];
     const pinned = forced.map(chunkById).filter(Boolean);
-    const contexts = [...pinned, ...hits.map((h) => h.c).filter((c) => !forced.includes(c.id))].map((c) => ({ id: c.id.startsWith("MODEL") || c.id.startsWith("MAT-") ? c.id : c.inv || c.id, title: c.title, text: c.text }));
+    const contexts = [...pinned, ...hits.map((h) => h.c).filter((c) => !forced.includes(c.id))].map((c) => ({ id: c.id.startsWith("MODEL") || c.id.startsWith("MAT-") || c.id.startsWith("RES-") ? c.id : c.inv || c.id, title: c.title, text: c.text }));
     if (cond) {
       const a = E.model.assess(cond);
       contexts.unshift({ id: "MODEL", title: "VULKAN flammability model output", text: `Material ${a.material.label} (1-g anchor: ${a.anchor.kind === "loi" ? `LOI ${a.anchor.o2}%, unverified` : `NASA-STD-6001 Test 1 MOC ${a.anchor.o2}% at ${(a.anchor.kPa / 6.89476).toFixed(1)} psia`}; likely limit range ${a.range[0].toFixed(1)}-${a.range[1].toFixed(1)}%), ${cond.o2}% O2, ${cond.p.toFixed(1)} kPa, gravity ${cond.g} g, ventilation ${cond.vent} cm/s. Estimated limiting O2 ${a.loc.toFixed(1)}%, margin ${a.margin.toFixed(1)} points, state "${a.state}". Effective flow ${a.uEff.toFixed(1)} cm/s. Evidence coverage ${a.coverage.level}: ${a.coverage.note} ${a.coverage.flags.join(" ")}` });
@@ -356,5 +358,7 @@
   const providerName = (p) => ((p || (online && online.provider)) === "openai" ? "OpenAI" : "Claude");
   // network came back: check the AI service again on the next question
   if (typeof window.addEventListener === "function") window.addEventListener("online", () => { online = null; });
-  E.ai = { ask, interpret, checkOnline, getIndex, parseConditions, emergency, isStop, speakable, providerName };
+  // new test results change the knowledge base: drop the cached indexes so the next question rebuilds them
+  const resetIndex = () => Object.keys(indexes).forEach((k) => delete indexes[k]);
+  E.ai = { ask, interpret, checkOnline, getIndex, resetIndex, parseConditions, emergency, isStop, speakable, providerName };
 })();

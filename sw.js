@@ -1,10 +1,10 @@
 /* VULKAN service worker: makes the app installable and usable with no network.
  * App files: network first (so every deploy shows up at once), cache as the offline fallback.
  * Fonts: cache first. The deck PDF and demo video go straight to the network. /api/*: never cached; when offline the app answers with its built-in reasoner. */
-const VERSION = "vulkan-2026-11-15-v5";
+const VERSION = "vulkan-2026-11-15-v6";
 const APP = [
   "./", "index.html", "styles.css", "manifest.webmanifest",
-  "data/investigations.js", "data/insights.js", "data/l10n-ru.js", "data/l10n-uz.js",
+  "data/investigations.js", "data/insights.js", "data/results.js", "data/l10n-ru.js", "data/l10n-uz.js",
   "i18n.js", "model.js", "ai.js", "voice.js", "app.js",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png",
 ];

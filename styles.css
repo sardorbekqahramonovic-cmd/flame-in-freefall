@@ -385,7 +385,23 @@ a.cite.ntrs:hover { text-decoration: underline; }
 }
 .btn.small { padding: 6px 12px; font-size: .85rem; margin-left: 6px; }
 .va-table.fm th.num:not(:nth-child(2)), .va-table.fm td.tst { text-align: center; }
-#validation, #fm2, #view-risk { scroll-margin-top: 96px; }
+#validation, #fm2, #new-results, #view-risk { scroll-margin-top: 96px; }
+/* new test results (FM2, FLARE, ...) */
+.nr-add { margin-top: 12px; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 14px; }
+.nr-add summary { cursor: pointer; font-weight: 600; color: var(--flame); }
+.nr-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 14px; margin-top: 12px; }
+.nr-form .ctrl { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.nr-form .wide { grid-column: 1 / -1; }
+.nr-form input[type="text"], .nr-form input[type="number"], .nr-form input[type="url"], .nr-form input[type="date"] { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--fg); }
+.nr-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.nr-err { color: var(--crit); }
+.nr-msg { color: var(--ok); }
+.nr-msg:empty { display: none; }
+.nr-foot { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-top: 12px; }
+.nr-foot .note { flex: 1 1 320px; margin: 0; }
+.btn.small { padding: 4px 10px; font-size: .78rem; }
+.va-table.nr td.src { white-space: normal; max-width: 16rem; }
+.va-table.nr td.src a { overflow-wrap: anywhere; word-break: break-all; }
 .panel.jump-flash { animation: jump-flash 1.8s ease-out; }
 @keyframes jump-flash { 0%, 35% { box-shadow: 0 0 0 3px var(--flame); } 100% { box-shadow: 0 0 0 3px transparent; } }
 @media (prefers-reduced-motion: reduce) { .panel.jump-flash { animation: none; } }
@@ -396,7 +412,7 @@ a.cite.ntrs:hover { text-decoration: underline; }
   @page { margin: 12mm; }
   body.print-report { background: #fff; }
   body.print-report header.topbar, body.print-report footer, body.print-report #drawer-root, body.print-report .tooltip,
-  body.print-report .view:not(#view-risk), body.print-report .controls, body.print-report #fm2, body.print-report .va-table,
+  body.print-report .view:not(#view-risk), body.print-report .controls, body.print-report #fm2, body.print-report #new-results, body.print-report .va-table,
   body.print-report .view-head { display: none !important; }
   body.print-report .print-only { display: block !important; }
   body.print-report .print-head h1 { font-size: 1.6rem; margin: 4px 0; }

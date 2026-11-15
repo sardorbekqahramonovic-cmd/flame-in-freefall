@@ -163,6 +163,47 @@
     });
   }
 
+  /* ---------------- New test results ----------------
+   * Results published after the curated record (FM2, FLARE, new White Sands tests). Reviewed ones ship in
+   * data/results.js (window.VULKAN_RESULTS); anyone can add more in their browser. Each result is checked
+   * against the model exactly like CHECKS, and FM2 results score the frozen FM2 predictions. */
+  const RESULTS_KEY = "vulkan:results";
+  function localResults() {
+    try { const a = JSON.parse(localStorage.getItem(RESULTS_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function saveLocalResults(list) {
+    try { localStorage.setItem(RESULTS_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+  }
+  const finite = (x) => typeof x === "number" && isFinite(x);
+  function validResult(r) {
+    return !!r && typeof r === "object" && E.MATERIALS.some((m) => m.id === r.mat) && ["burns", "noburn", "limit"].includes(r.kind)
+      && finite(r.o2) && r.o2 > 0 && r.o2 <= 100 && finite(r.p) && r.p > 0 && finite(r.g) && r.g >= 0 && typeof r.exp === "string" && r.exp.trim() !== "";
+  }
+  function scoreResult(r) {
+    const m = E.MATERIALS.find((x) => x.id === r.mat);
+    const vent = finite(r.vent) && r.vent > 0 ? r.vent : 0;
+    const ub = buoyantFlow(r.g), uEff = Math.sqrt(vent * vent + ub * ub);
+    const loc = limitingO2(m, uEff, r.p, r.g), range = band(m, uEff, r.p, r.g);
+    const lo = r.kind === "limit" ? r.o2 - 1 : null, hi = r.kind === "limit" ? r.o2 + 1 : null;
+    const v = verdict(r.kind === "limit" ? { kind: "limit", lo, hi } : { kind: r.kind, o2: r.o2 }, loc);
+    let fm2 = null;
+    if (/\bfm-?2\b/i.test(r.exp) && Math.abs(r.p - kPa(8.2)) < 3.5 && Math.abs(r.g - 0.166) < 0.03) {
+      const pred = fm2Predictions([r.mat])[0];
+      if (pred && r.kind === "limit") {
+        fm2 = { outcome: hi >= pred.range[0] && lo <= pred.range[1] ? "hit" : "miss" };
+      } else if (pred) {
+        const test = pred.tests.find((x) => Math.abs(x.o2 - r.o2) <= 0.6);
+        if (test) fm2 = { call: test.call, outcome: test.call === "edge" ? "edge" : (test.call === "burn") === (r.kind === "burns") ? "hit" : "miss" };
+      }
+    }
+    return { ...r, material: m, vent, loc, range, lo, hi, v, fm2 };
+  }
+  function results() {
+    const shipped = (Array.isArray(window.VULKAN_RESULTS) ? window.VULKAN_RESULTS : []).map((r) => ({ ...r, local: false }));
+    const local = localResults().map((r) => ({ ...r, local: true }));
+    return shipped.concat(local).filter(validResult).map((r, i) => scoreResult({ ...r, n: i + 1 }));
+  }
+
   /* Plain-text descriptions shared by the knowledge base and the offline reasoner. */
   const num1 = (x) => (E.num ? E.num(x, 1) : Number(x).toFixed(1));
   function anchorText(material) {
@@ -175,6 +216,14 @@
   function fm2Line(pred) {
     const calls = pred.tests.map((x) => `${x.o2}%: ${t("fm." + x.call)}`).join(", ");
     return t("ch.m3line", { m: pred.material.label, x: num1(pred.loc), lo: num1(pred.range[0]), hi: num1(pred.range[1]), calls });
+  }
+  function resultText(r) {
+    const cond = `${num1(r.p / PSI)} psia, ${r.g === 0 ? t("va.orbit") : (E.num ? E.num(r.g, 3) : r.g) + " g"}, ${num1(r.vent)} cm/s`;
+    const obs = r.kind === "limit" ? t("nr.obsLimit", { o2: num1(r.o2) }) : t(r.kind === "burns" ? "va.obsBurns" : "va.obsNoburn", { o2: num1(r.o2) });
+    let s = t("ch.res", { exp: r.exp, date: r.date || "—", m: r.material.label, cond, obs, x: num1(r.loc), v: t("va.v." + r.v), src: r.src || "—" });
+    if (r.fm2) s += " " + t("ch.resFm2", { o: t("nr.fm." + r.fm2.outcome) });
+    if (r.note) s += " " + r.note;
+    return s;
   }
   function validationNumbers() {
     const v = validate();
@@ -339,6 +388,7 @@
     chunks.push({ id: "MODEL-2", title: t("ch.m2Title"), text: t("ch.m2", validationNumbers()) });
     chunks.push({ id: "MODEL-3", title: t("ch.m3Title"), text: t("ch.m3", { d: FM2_FROZEN, lines: fm2Predictions().map(fm2Line).join(" ") }) });
     E.MATERIALS.forEach((m) => chunks.push({ id: `MAT-${m.id}`, title: t("ch.matTitle", { m: m.label }), text: materialText(m) }));
+    results().forEach((r) => chunks.push({ id: `RES-${r.n}`, title: t("ch.resTitle", { exp: r.exp, m: r.material.label }), text: resultText(r) }));
     return chunks;
   }
 
@@ -375,5 +425,5 @@
     return { search };
   }
 
-  E.model = { assess, curve, buoyantFlow, limitingO2, limitingO2v1, band, anchor, anchorText, validate, validationNumbers, CHECKS, fm2Predictions, fm2Line, FM2_FROZEN, FM2_TESTS, rank, DEFAULT_WEIGHTS, envDist, buildChunks, makeIndex, tokens, PARAMS };
+  E.model = { assess, curve, buoyantFlow, limitingO2, limitingO2v1, band, anchor, anchorText, validate, validationNumbers, CHECKS, fm2Predictions, fm2Line, FM2_FROZEN, FM2_TESTS, results, localResults, saveLocalResults, resultText, PSI, rank, DEFAULT_WEIGHTS, envDist, buildChunks, makeIndex, tokens, PARAMS };
 })();

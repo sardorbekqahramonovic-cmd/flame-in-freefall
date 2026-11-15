@@ -60,6 +60,7 @@
             const s = src.get(id), url = s ? s.url : `https://ntrs.nasa.gov/citations/${id.slice(5)}`;
             return `<a class="cite ntrs" href="${esc(url)}" target="_blank" rel="noopener" title="${esc(s ? s.title : id)}">${esc(t("cite.NTRS", { y: s && s.year ? s.year : "" }).trim())}</a>`;
           }
+          if (/^RES-\d+$/.test(id)) return `<button class="cite model" type="button" data-goto="new-results">${esc(t("cite.RES"))}</button>`;
           if (/^MODEL(-[1-3])?$/.test(id) || /^MAT-[a-z]+$/.test(id)) {
             const goto = id === "MODEL-2" ? "validation" : id === "MODEL-3" ? "fm2" : "view-risk";
             const label = id.startsWith("MAT-") ? t("cite.MAT") : t("cite." + id.replace("-", ""));
@@ -568,7 +569,9 @@
         </div>
       </div>
       ${validationPanel()}
-      ${fm2Panel()}`;
+      ${fm2Panel()}
+      ${resultsPanel()}`;
+    wireResults();
     const inputs = { o2: "#sim-o2", p: "#sim-p", g: "#sim-g", vent: "#sim-v" };
     Object.entries(inputs).forEach(([k, sel]) => $(sel).addEventListener("input", (e) => { sim[k] = parseFloat(e.target.value); updateRisk(); }));
     $("#sim-mat").addEventListener("change", (e) => { sim.materialId = e.target.value; store.set("material", sim.materialId); updateRisk(); });
@@ -698,6 +701,85 @@
         </table></div>
         <p class="note">${t("fm.nasa", { x: n1((preds.find((p) => p.material.id === "nomex") || preds[0]).loc), src: srcLink("ferkul2026") })}</p>
       </section>`;
+  }
+  /* ---------------- new test results (FM2, FLARE, ...) ---------------- */
+  function resultsPanel() {
+    const list = M.results();
+    const fm = (r) => r.fm2 ? `<span class="pill ${r.fm2.outcome === "hit" ? "ok" : r.fm2.outcome === "miss" ? "crit" : "warn"}">${t("nr.fm." + r.fm2.outcome)}</span>` : `<span class="muted">—</span>`;
+    const obs = (r) => r.kind === "limit" ? t("nr.obsLimit", { o2: n1(r.o2) }) : t(r.kind === "burns" ? "va.obsBurns" : "va.obsNoburn", { o2: n1(r.o2) });
+    const safeUrl = (u) => /^https:\/\//i.test(u || "");
+    const rows = list.map((r) => `<tr><td class="t">${esc(r.exp)}${r.date ? ` <span class="muted">· ${esc(r.date)}</span>` : ""}${r.local ? ` <span class="pill">${t("nr.local")}</span>` : ""}</td>
+      <td data-l="${t("va.thMat")}">${esc(r.material.label)}</td>
+      <td class="mono" data-l="${t("va.thCond")}">${checkCond(r)}</td>
+      <td data-l="${t("va.thObs")}">${obs(r)}${r.note ? `<div class="muted">${esc(r.note)}</div>` : ""}</td>
+      ${vCell(r.loc, r.v, "VULKAN")}
+      <td data-l="${t("nr.thFm2")}">${fm(r)}</td>
+      <td class="src" data-l="${t("va.thSrc")}">${safeUrl(r.src) ? `<a href="${esc(r.src)}" target="_blank" rel="noopener">${esc(r.src.replace(/^https:\/\/(www\.)?/i, "").slice(0, 48))}</a>` : "—"}${r.local ? ` <button type="button" class="btn small" data-del="${esc(r.id)}">${t("nr.del")}</button>` : ""}</td></tr>`).join("");
+    const nLocal = list.filter((r) => r.local).length;
+    const num = (id, label, attrs, hint) => `<div class="ctrl"><label for="${id}">${label}</label><input type="number" id="${id}" inputmode="decimal" ${attrs}>${hint ? `<div class="hint">${hint}</div>` : ""}</div>`;
+    return `<section class="panel model-check" id="new-results" aria-labelledby="nr-h">
+        <div class="panel-title"><h2 id="nr-h">${t("nr.title")}</h2><span class="eyebrow">${t("nr.eyebrow", { n: list.length })}</span></div>
+        <p class="lede-sm">${t("nr.lede")}</p>
+        <p class="note nr-msg" id="nr-msg" role="status"></p>
+        ${list.length ? `<div class="table-wrap"><table class="va-table va-cards nr">
+          <thead><tr><th>${t("nr.exp")}</th><th>${t("va.thMat")}</th><th>${t("va.thCond")}</th><th>${t("va.thObs")}</th><th class="num">VULKAN</th><th>${t("nr.thFm2")}</th><th>${t("va.thSrc")}</th></tr></thead>
+          <tbody>${rows}</tbody></table></div>` : `<p class="note">${t("nr.empty")}</p>`}
+        <details class="nr-add"><summary>${t("nr.add")}</summary>
+          <form id="nr-form" class="nr-form" novalidate>
+            <div class="ctrl"><label for="nr-exp">${t("nr.exp")}</label><input type="text" id="nr-exp" maxlength="40" placeholder="FM2" autocomplete="off"></div>
+            <div class="ctrl"><label for="nr-mat">${t("rk.material")}</label><select id="nr-mat">${E.MATERIALS.map((m) => `<option value="${m.id}">${esc(m.label)}</option>`).join("")}</select></div>
+            <div class="ctrl"><label for="nr-kind">${t("nr.kind")}</label><select id="nr-kind"><option value="burns">${t("nr.kBurns")}</option><option value="noburn">${t("nr.kNoburn")}</option><option value="limit">${t("nr.kLimit")}</option></select></div>
+            ${num("nr-o2", t("nr.o2"), 'min="1" max="100" step="0.1" placeholder="25"')}
+            ${num("nr-p", t("nr.p"), 'min="0.5" max="30" step="0.1" placeholder="8.2"')}
+            ${num("nr-g", t("nr.g"), 'min="0" max="3" step="0.001" placeholder="0.166"', t("rk.gHint"))}
+            ${num("nr-v", t("nr.v"), 'min="0" max="200" step="0.1" placeholder="0"', t("nr.vHint"))}
+            <div class="ctrl"><label for="nr-date">${t("nr.date")}</label><input type="date" id="nr-date"></div>
+            <div class="ctrl wide"><label for="nr-src">${t("nr.src")}</label><input type="url" id="nr-src" placeholder="https://ntrs.nasa.gov/citations/…" autocomplete="off"></div>
+            <div class="ctrl wide"><label for="nr-note">${t("nr.note")}</label><input type="text" id="nr-note" maxlength="200" autocomplete="off"></div>
+            <div class="wide nr-actions"><button type="submit" class="btn primary">${t("nr.save")}</button><span class="note nr-err" id="nr-err" role="alert"></span></div>
+          </form>
+        </details>
+        <div class="nr-foot"><p class="note">${t("nr.how")}</p>${nLocal ? `<button type="button" class="btn" id="nr-export">${t("nr.export")}</button>` : ""}</div>
+      </section>`;
+  }
+  function resultsChanged(msg) {
+    if (E.ai && E.ai.resetIndex) E.ai.resetIndex();
+    renderRisk();
+    const m = $("#nr-msg");
+    if (m && msg) m.textContent = msg;
+    const panel = document.getElementById("new-results");
+    if (panel) panel.scrollIntoView({ block: "start" });
+  }
+  function wireResults() {
+    const form = $("#nr-form");
+    if (!form) return;
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const val = (id) => ($("#" + id).value || "").trim();
+      const numv = (id) => { const x = parseFloat(val(id).replace(",", ".")); return isFinite(x) ? x : NaN; };
+      const r = { id: "u" + Date.now().toString(36), exp: val("nr-exp"), mat: val("nr-mat"), kind: val("nr-kind"), o2: numv("nr-o2"), p: numv("nr-p"), g: numv("nr-g"), vent: val("nr-v") === "" ? 0 : numv("nr-v"), src: val("nr-src"), date: val("nr-date"), note: val("nr-note") };
+      const ok = r.exp && r.o2 > 0 && r.o2 <= 100 && r.p > 0 && r.p <= 30 && r.g >= 0 && r.g <= 3 && r.vent >= 0 && /^https:\/\/\S+\.\S+/i.test(r.src);
+      if (!ok) { $("#nr-err").textContent = t("nr.err"); return; }
+      r.p = Math.round(r.p * M.PSI * 100) / 100; // stored in kPa, like the rest of the model
+      const list = M.localResults();
+      list.push(r);
+      if (!M.saveLocalResults(list)) { $("#nr-err").textContent = t("nr.err"); return; }
+      resultsChanged(t("nr.saved"));
+    });
+    $$("[data-del]").forEach((b) => b.addEventListener("click", () => {
+      M.saveLocalResults(M.localResults().filter((r) => r.id !== b.dataset.del));
+      resultsChanged("");
+    }));
+    const ex = $("#nr-export");
+    if (ex) ex.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(M.localResults(), null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "vulkan-results.json";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => { URL.revokeObjectURL(link.href); link.parentNode.removeChild(link); }, 1000);
+    });
   }
   function drawRiskChart(a) {
     const sim = state.sim;
