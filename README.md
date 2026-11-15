@@ -110,7 +110,7 @@ tests/                   model checks
 - **Answers:** Ask VULKAN answers are generated at runtime by Claude or an OpenAI model from cited NASA passages. Anything not backed by those passages is labelled "general knowledge, not NASA data".
 - **Audio:** spoken answers use AI-generated speech (OpenAI text-to-speech) or the browser's own voice. The interface says so next to the voice controls, and `api/voice.js` returns an `x-ai-generated` header with each audio clip.
 - **Deck:** the demo slides were laid out with AI help; their images are screenshots of the app.
-- **Demo video:** the narration is AI-generated speech (OpenAI gpt-4o-mini-tts, made through VULKAN's own voice endpoint). The video was edited with AI help from screen captures of the app. This is stated in the video description and in the MP4 metadata.
+- **Demo video:** the narration is AI-generated speech (OpenAI gpt-4o-mini-tts, made through VULKAN's own voice endpoint). The video was edited with AI help from screen captures of the app. This is stated here, in the MP4 metadata and in the video description wherever the video is posted.
 
 No AI-generated images or video are used, and no NASA logos or branding appear anywhere.
 
