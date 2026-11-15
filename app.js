@@ -627,7 +627,7 @@
           <div class="va-col"><div class="k">${t("va.before")}</div><div>${tally(v.v1)}</div></div>
           <div class="va-col now"><div class="k">${t("va.now")}</div><div>${tally(v.v2)}</div></div>
         </div>
-        <div class="table-wrap"><table class="va-table cards">
+        <div class="table-wrap"><table class="va-table va-cards">
           <thead><tr><th>${t("va.thMat")}</th><th>${t("va.thCond")}</th><th>${t("va.thObs")}</th><th class="num">${t("va.thBefore")}</th><th class="num">${t("va.thNow")}</th><th>${t("va.thSrc")}</th></tr></thead>
           <tbody>${v.rows.map((r) => `<tr><td class="t">${esc(r.material.label)}${r.tuned ? " †" : ""}</td><td class="mono" data-l="${t("va.thCond")}">${checkCond(r)}</td><td data-l="${t("va.thObs")}">${checkObs(r)}</td>${vCell(r.v1, r.v1v, t("va.thBefore"))}${vCell(r.v2, r.v2v, t("va.thNow"))}<td class="src" data-l="${t("va.thSrc")}">${srcLink(r.src === "ssce" ? "guide" : r.src)}</td></tr>`).join("")}</tbody>
         </table></div>
@@ -640,7 +640,7 @@
     return `<section class="panel model-check" id="fm2" aria-labelledby="fm-h">
         <div class="panel-title"><h2 id="fm-h">${t("fm.title")}</h2><span class="eyebrow">${t("fm.frozen", { d: M.FM2_FROZEN })}</span></div>
         <p class="lede-sm">${t("fm.lede")}</p>
-        <div class="table-wrap"><table class="va-table cards fm">
+        <div class="table-wrap"><table class="va-table va-cards fm">
           <thead><tr><th>${t("va.thMat")}</th><th class="num">${t("fm.thLimit")}</th>${M.FM2_TESTS.map((o) => `<th class="num">${o}% O₂</th>`).join("")}</tr></thead>
           <tbody>${preds.map((p) => `<tr><td class="t">${esc(p.material.label)}</td><td class="num lim" data-l="${t("fm.thLimit")}"><span>${n1(p.loc)}% <span class="muted">(${n1(p.range[0])}–${n1(p.range[1])})</span></span></td>${p.tests.map(cell).join("")}</tr>`).join("")}</tbody>
         </table></div>

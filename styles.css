@@ -371,16 +371,17 @@ a.cite.ntrs:hover { text-decoration: underline; }
 .anchor-note a, .va-table a { color: inherit; }
 @media (max-width: 760px) {
   .va-sum { grid-template-columns: minmax(0, 1fr); }
-  .va-table.cards, .va-table.cards tbody, .va-table.cards tr { display: block; }
-  .va-table.cards thead { display: none; }
-  .va-table.cards tr { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
-  .va-table.cards td { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 10px; border: 0; padding: 4px 0; text-align: left; max-width: none; }
-  .va-table.cards td::before { content: attr(data-l); font: 600 .7rem/1.5 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .va-table.cards td.t { display: block; font-weight: 600; padding-bottom: 6px; }
-  .va-table.cards td.t::before { content: none; }
-  .va-table.cards .pill { margin-left: 0; }
+  .va-table.va-cards, .va-table.va-cards tbody, .va-table.va-cards tr { display: block; }
+  .va-table.va-cards thead { display: none; }
+  .va-table.va-cards tr { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+  .va-table.va-cards td { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 10px; border: 0; padding: 4px 0; text-align: left; max-width: none; }
+  .va-table.va-cards td::before { content: attr(data-l); font: 600 .7rem/1.5 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .va-table.va-cards td.t { display: block; font-weight: 600; padding-bottom: 6px; }
+  .va-table.va-cards td.t::before { content: none; }
+  .va-table.va-cards .pill { margin-left: 0; }
   .va-table.fm tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 6px; }
   .va-table.fm td.t, .va-table.fm td.lim { grid-column: 1 / -1; }
   .va-table.fm td.tst { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding-top: 6px; }
 }
 .btn.small { padding: 6px 12px; font-size: .85rem; margin-left: 6px; }
+.va-table.fm th.num:not(:nth-child(2)), .va-table.fm td.tst { text-align: center; }
