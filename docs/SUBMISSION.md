@@ -5,6 +5,9 @@ Paste each section into the field with the same name on the Project Submission p
 1. Open both links in a private browser window to confirm they open with no login.
 2. Check the team name (Rescuers) and the member names on slide 1 of the deck and on the video's end card.
 3. Upload 3–4 screenshots from `docs/images/` (PNG, each under 10 MB) as the project images. `4-model-check.png` shows the check against NASA data, the strongest evidence for Validity.
+4. Tick the boxes under **Project Submission Verification**.
+
+The 30-second video is linked at the top of the Detailed Project Description. If you also upload it to YouTube, you can replace that link with the YouTube one.
 
 ---
 
@@ -38,6 +41,8 @@ https://flame-in-freefall-eight.vercel.app
 (Source code: https://github.com/sardorbekqahramonovic-cmd/flame-in-freefall)
 
 ## Detailed Project Description
+
+**Links.** 30-second demo video (English captions): https://flame-in-freefall-eight.vercel.app/docs/VULKAN-30s.mp4 · 7-slide deck: https://flame-in-freefall-eight.vercel.app/docs/VULKAN-demo.pdf · Source code: https://github.com/sardorbekqahramonovic-cmd/flame-in-freefall
 
 **What it does.** VULKAN has seven views:
 

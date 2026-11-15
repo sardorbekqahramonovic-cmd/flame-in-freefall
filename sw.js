@@ -1,7 +1,7 @@
 /* VULKAN service worker: makes the app installable and usable with no network.
  * App files: network first (so every deploy shows up at once), cache as the offline fallback.
- * Fonts: cache first. /api/*: never cached; when offline the app answers with its built-in reasoner. */
-const VERSION = "vulkan-2026-11-15-v4";
+ * Fonts: cache first. The deck PDF and demo video go straight to the network. /api/*: never cached; when offline the app answers with its built-in reasoner. */
+const VERSION = "vulkan-2026-11-15-v5";
 const APP = [
   "./", "index.html", "styles.css", "manifest.webmanifest",
   "data/investigations.js", "data/insights.js", "data/l10n-ru.js", "data/l10n-uz.js",
@@ -47,6 +47,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith("/api/")) return; // live AI and NTRS search: network only
+    if (/\.(mp4|pdf)$/i.test(url.pathname)) return; // demo video and deck: let the browser stream them
     e.respondWith(networkFirst(req));
   } else if (FONT_HOSTS.includes(url.hostname)) {
     e.respondWith(cacheFirst(req));

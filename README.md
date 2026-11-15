@@ -4,6 +4,8 @@
 
 **NASA Space Apps Challenge 2026 · Flame in Freefall: SI-Powered Fire Safety Insights from Microgravity Combustion Data**
 
+**Live app:** https://flame-in-freefall-eight.vercel.app · **Demo deck (7 slides):** [VULKAN-demo.pdf](docs/VULKAN-demo.pdf) · **30-second video:** [VULKAN-30s.mp4](docs/VULKAN-30s.mp4)
+
 VULKAN turns decades of NASA microgravity combustion experiments into ranked, explained fire-safety insights for Moon and Mars missions. Pick a mission (ISS, lunar habitat, pressurized rover, Mars habitat, Mars transit, spacesuit) and every view re-ranks and re-interprets the evidence for that atmosphere and gravity level.
 
 ## Team Rescuers
@@ -98,7 +100,7 @@ voice.js                 speech in/out: OpenAI via api/voice, or the browser's W
 api/ask.js               serverless Q&A endpoint: Claude, or OpenAI as a low-cost option
 api/voice.js             serverless speech-to-text and text-to-speech (OpenAI)
 data/                    curated investigations, atmospheres, materials, insights, RU / UZ translations
-docs/                    submission text, demo deck (VULKAN-demo.pdf) and demo video script
+docs/                    submission text, demo deck (VULKAN-demo.pdf), 30-second video (VULKAN-30s.mp4) and demo script
 tests/                   model checks
 ```
 
